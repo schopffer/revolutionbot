@@ -1,0 +1,13 @@
+{
+  "name": "revolution-bot",
+  "version": "1.0.0",
+  "description": "Bot Discord Revolution avec message de bienvenue et GIF",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.13.0",
+    "express": "^4.18.2"
+  }
+}
