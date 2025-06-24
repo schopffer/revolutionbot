@@ -1,106 +1,88 @@
-const express = require('express');
-const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-require('dotenv').config();
+const { SlashCommandBuilder } = require('discord.js');
+const { REST, Routes } = require('discord.js');
 
-const app = express();
-app.get('/', (req, res) => res.send('Bot en ligne !'));
-app.listen(3000, () => console.log('🟢 Web server actif !'));
+const roleChannelId = '1385943465321566289'; // salon #roles
 
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ]
-});
+const emojiRoleMap = {
+  '🔫': 'Valorant',
+  '💥': 'Fortnite',
+  '🚀': 'Rocket League',
+  '🎮': 'Autres jeux',
+  '🔞': 'Salon trash'
+};
 
-// ID du salon #bienvenue
-const welcomeChannelId = '1385999517983440967';
+// ✅ Enregistrer la commande slash /autorole (à faire une seule fois)
+client.once('ready', async () => {
+  const commands = [
+    new SlashCommandBuilder()
+      .setName('autorole')
+      .setDescription('Envoie le message pour choisir des rôles.')
+      .toJSON()
+  ];
 
-// ID du salon autorôle
-const roleMessageChannelId = '1385943465321566289';
-
-// Rôles disponibles avec leurs emojis et IDs (à remplacer avec tes vrais IDs de rôles Discord)
-const rolesData = [
-  { emoji: '🔫', label: 'Valorant', roleId: 'ID_ROLE_VALORANT' },
-  { emoji: '💥', label: 'Fortnite', roleId: 'ID_ROLE_FORTNITE' },
-  { emoji: '🚀', label: 'Rocket League', roleId: 'ID_ROLE_ROCKET_LEAGUE' },
-  { emoji: '🎮', label: 'Autres jeux', roleId: 'ID_ROLE_AUTRES' },
-  { emoji: '🔞', label: 'Trash', roleId: 'ID_ROLE_TRASH' },
-];
-
-client.once('ready', () => {
-  console.log(`✅ Bot connecté en tant que ${client.user.tag}`);
-});
-
-// 🎯 Gestion du clic sur les boutons d'autorôle
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isButton()) return;
-
-  const clicked = rolesData.find(r => r.label === interaction.customId);
-  if (!clicked) return;
-
-  const role = interaction.guild.roles.cache.get(clicked.roleId);
-  if (!role) return;
-
-  const hasRole = interaction.member.roles.cache.has(clicked.roleId);
+  const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
   try {
-    if (hasRole) {
-      await interaction.member.roles.remove(role);
-      await interaction.reply({ content: `❌ Rôle ${clicked.label} retiré`, ephemeral: true });
-    } else {
-      await interaction.member.roles.add(role);
-      await interaction.reply({ content: `✅ Rôle ${clicked.label} ajouté`, ephemeral: true });
-    }
-  } catch (err) {
-    console.error("Erreur rôle:", err);
-    await interaction.reply({ content: `❌ Erreur lors de la gestion du rôle`, ephemeral: true });
-  }
-});
-
-// 🛠️ Commande admin pour envoyer le message d'autorôle
-client.on('messageCreate', async message => {
-  if (message.content === '!autorole' && message.member.permissions.has('Administrator')) {
-    const row = new ActionRowBuilder().addComponents(
-      rolesData.map(role =>
-        new ButtonBuilder()
-          .setCustomId(role.label)
-          .setLabel(`${role.emoji} ${role.label}`)
-          .setStyle(ButtonStyle.Secondary)
-      )
+    await rest.put(
+      Routes.applicationCommands(client.user.id),
+      { body: commands }
     );
-
-    const embed = new EmbedBuilder()
-      .setTitle("🎯 Choisis tes jeux préférés !")
-      .setDescription(
-        `Clique sur les boutons ci-dessous pour ajouter ou retirer les rôles associés.\n\nAucun rôle n’a de permission spéciale, ils servent juste à t'identifier avec la communauté et recevoir les bons ping 🔔\n\n💡 Si tu veux proposer d’autres jeux, passe dans le salon discussion !`
-      )
-      .setColor(0x00AE86);
-
-    await message.channel.send({ embeds: [embed], components: [row] });
+    console.log("✅ Commande /autorole enregistrée !");
+  } catch (err) {
+    console.error("❌ Erreur lors de l'enregistrement :", err);
   }
 });
 
-// 👋 Message de bienvenue
-client.on('guildMemberAdd', async member => {
-  const channel = member.guild.channels.cache.get(welcomeChannelId);
-  if (!channel) return console.error("❌ Salon #bienvenue introuvable");
+// 🎯 Quand on tape /autorole
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isChatInputCommand()) return;
+  if (interaction.commandName !== 'autorole') return;
+
+  const channel = await client.channels.fetch(roleChannelId);
+  if (!channel) return interaction.reply({ content: '❌ Salon introuvable.', ephemeral: true });
 
   const embed = new EmbedBuilder()
-    .setTitle(`Bienvenue ${member.user.username} !`)
-    .setColor(0x00AE86)
-    .setImage('https://media.giphy.com/media/DSxKEQoQix9hC/giphy.gif')
-    .setFooter({ text: 'Amuse-toi bien sur le serveur ! 🌟' });
+    .setTitle("🎯 Choisis tes jeux préférés")
+    .setDescription(
+      `Clique sur les réactions ci-dessous pour obtenir un rôle :\n\n` +
+      `🔫 Valorant\n💥 Fortnite\n🚀 Rocket League\n🎮 Autres jeux\n🔞 Salon trash\n\n` +
+      `💡 Tu peux en proposer d'autres dans le salon discussion !`
+    )
+    .setColor(0xffc300);
 
   try {
-    await channel.send({ content: `<@${member.id}>`, embeds: [embed] });
-    console.log(`✅ Message de bienvenue envoyé pour ${member.user.tag}`);
+    const message = await channel.send({ embeds: [embed] });
+    for (const emoji of Object.keys(emojiRoleMap)) {
+      await message.react(emoji);
+    }
+    await interaction.reply({ content: "✅ Message posté dans le salon des rôles !", ephemeral: true });
   } catch (err) {
-    console.error("❌ Erreur lors de l'envoi du message :", err);
+    console.error("❌ Erreur lors de l'envoi :", err);
+    interaction.reply({ content: "❌ Une erreur est survenue.", ephemeral: true });
   }
 });
 
-// 🔐 Connexion avec le token
-client.login(process.env.TOKEN);
+// 📥 Quand un membre clique sur une réaction
+client.on('messageReactionAdd', async (reaction, user) => {
+  if (user.bot || !reaction.message.guild) return;
 
+  const emoji = reaction.emoji.name;
+  const roleName = emojiRoleMap[emoji];
+  if (!roleName) return;
+
+  const member = await reaction.message.guild.members.fetch(user.id);
+  const role = reaction.message.guild.roles.cache.find(r => r.name === roleName);
+  if (role) await member.roles.add(role);
+});
+
+// 📤 Quand un membre retire une réaction
+client.on('messageReactionRemove', async (reaction, user) => {
+  if (user.bot || !reaction.message.guild) return;
+
+  const emoji = reaction.emoji.name;
+  const roleName = emojiRoleMap[emoji];
+  if (!roleName) return;
+
+  const member = await reaction.message.guild.members.fetch(user.id);
+  const role = reaction.message.guild.roles.cache.find(r => r.name === roleName);
+  if (role) await member.roles.remove(role);
+});
