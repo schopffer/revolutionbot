@@ -101,6 +101,10 @@ client.on(Events.InteractionCreate, async interaction => {
     const { commandName } = interaction;
 
     if (commandName === 'autorole') {
+      if (interaction.channel.id !== choixRoleChannelId) {
+        return interaction.reply({ content: '❌ Utilise cette commande dans le salon autorole.', ephemeral: true });
+      }
+
       await interaction.reply({ content: '📩 Menu autorole envoyé dans ce salon.', ephemeral: true });
 
       const embed = new EmbedBuilder()
@@ -152,8 +156,6 @@ Réagis avec un émoji pour recevoir un rôle :
         .setTitle('📚 Commandes disponibles')
         .setColor(0x00bfff)
         .setDescription(`
-Voici les commandes disponibles :
-
 • /autorole : afficher les rôles disponibles
 • /reglement : afficher le règlement
 • /ban : bannir un membre (admin seulement)
@@ -208,5 +210,31 @@ Voici les commandes disponibles :
   }
 });
 
-// 🔐 Connexion au bot
+// 🎭 Gestion des rôles via réactions
+async function handleReaction(reaction, user, add = true) {
+  try {
+    if (reaction.partial) await reaction.fetch();
+    if (reaction.message.partial) await reaction.message.fetch();
+    if (user.bot) return;
+
+    if (reaction.message.channelId !== choixRoleChannelId) return;
+
+    const roleId = roles[reaction.emoji.name];
+    if (!roleId) return;
+
+    const member = await reaction.message.guild.members.fetch(user.id);
+    if (add) {
+      await member.roles.add(roleId);
+    } else {
+      await member.roles.remove(roleId);
+    }
+  } catch (err) {
+    console.error("❌ Erreur rôle via réaction :", err);
+  }
+}
+
+client.on('messageReactionAdd', (reaction, user) => handleReaction(reaction, user, true));
+client.on('messageReactionRemove', (reaction, user) => handleReaction(reaction, user, false));
+
+// 🔐 Connexion
 client.login(process.env.TOKEN);
