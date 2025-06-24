@@ -60,30 +60,34 @@ client.on('messageCreate', async message => {
     if (message.channel.id !== reglementChannelId) return;
 
     const embed = new EmbedBuilder()
-      .setTitle('📜 Règlement du Serveur Discord')
-      .setColor(0x3498db)
-      .setDescription(
-        '**🤝 Respect et Bienveillance**  \n' +
-        'Le respect entre membres est **obligatoire**.  \n' +
-        'Pas d’insultes, harcèlement ou propos haineux.  \n\n' +
+  .setTitle('📜 𝗥𝗲̀𝗴𝗹𝗲𝗺𝗲𝗻𝘁 𝗱𝘂 𝗦𝗲𝗿𝘃𝗲𝘂𝗿 𝗗𝗶𝘀𝗰𝗼𝗿𝗱')
+  .setColor(0x3498db)
+  .setDescription(
+`__**🤝 Respect et Bienveillance**__  
+**Le respect entre membres est obligatoire.**  
+Pas d’insultes, harcèlement ou propos haineux.
 
-        '**🗣️ Comportement et Langage**  \n' +
-        'Langage approprié, pas de spam ou pub.  \n' +
-        'Reste **poli** même en cas de désaccord.  \n\n' +
+__**🗣️ Comportement et Langage**__  
+**Utilise un langage approprié.**  
+Pas de spam ou de pub. Reste poli même en cas de désaccord.
 
-        '**📌 Sujets sensibles**  \n' +
-        'Évite politique, religion, contenu NSFW.  \n\n' +
+__**📌 Sujets sensibles**__  
+Évite politique, religion, contenu NSFW.
 
-        '**📢 Publicité et Partages**  \n' +
-        'Pas de pub sans autorisation. Liens non nuisibles.  \n\n' +
+__**📢 Publicité et Partages**__  
+Pas de pub sans autorisation.  
+Les liens doivent être sûrs et non nuisibles.
 
-        '**🛠️ Utilisation des salons**  \n' +
-        'Respecte les thèmes, ne spam pas les pings.  \n\n' +
+__**🛠️ Utilisation des salons**__  
+Respecte les thèmes de chaque salon.  
+Évite de ping inutilement.
 
-        '**👑 Staff et Sanctions**  \n' +
-        'Respecte les décisions du staff. Contacte un modo en cas de souci.'
-      );
-
+__**👑 Staff et Sanctions**__  
+Le staff est là pour t’aider.  
+**Respecte leurs décisions.**  
+En cas de souci, contacte un modo.`
+);
+    
     const button = new ButtonBuilder()
       .setCustomId('reglement-valide')
       .setLabel('Valider le règlement')
