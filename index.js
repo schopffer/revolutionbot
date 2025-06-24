@@ -1,42 +1,55 @@
-// 🌐 Mini serveur Express (nécessaire pour Render ou UptimeRobot)
+// 🌐 Mini serveur Express pour Render
 const express = require('express');
 const app = express();
-
 app.get('/', (req, res) => res.send('Bot en ligne !'));
 app.listen(3000, () => console.log('🟢 Web server actif !'));
 
-// 📦 Modules Discord.js
+// 📦 Modules Discord
 require('dotenv').config();
-const { 
-  Client, 
-  GatewayIntentBits, 
-  EmbedBuilder, 
-  ButtonBuilder, 
-  ActionRowBuilder, 
-  ButtonStyle 
+const {
+  Client,
+  GatewayIntentBits,
+  EmbedBuilder,
+  Partials,
+  ButtonBuilder,
+  ButtonStyle,
+  ActionRowBuilder,
+  Events
 } = require('discord.js');
 
+// 🤖 Client Discord
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ]
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers
+  ],
+  partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
 
-// 🆔 ID des salons et rôles
-const welcomeChannelId = '1385999517983440967'; // Salon de bienvenue
-const reglementChannelId = '1385409088824938652'; // Salon du règlement
-const membreRoleId = '1385627871023861820'; // Rôle à attribuer après clic
-const emojiAccept = '<:apple_success:1387148694230667448>'; // Emoji personnalisé
+// 🎯 IDs
+const welcomeChannelId = '1385999517983440967';
+const reglementChannelId = '1385409088824938652';
+const reglementRoleId = '1385627871023861820';
+const emojiAccept = '<:apple_success:1387148694230667448>';
 
-// ✅ Quand le bot est prêt
+// 🚀 Rôles jeux par emojis
+const roleMessageChannelId = '1385943465321566289';
+const roleEmojis = {
+  '🔫': '1385980913728487455',       // Valorant
+  '💥': '1386063811907162183',       // Fortnite
+  '🚀': '1385983179034202112',       // Rocket League
+  '🎮': '1385982774619672646',       // Autres jeux
+  '🔞': '1386695919675769005'        // Trash
+};
+
+// ✅ Bot prêt
 client.once('ready', () => {
-  console.log(`✅ Bot connecté en tant que ${client.user.tag}`);
+  console.log(`✅ Connecté en tant que ${client.user.tag}`);
 });
 
-// 👋 Message de bienvenue automatique
+// 👋 Bienvenue
 client.on('guildMemberAdd', async member => {
   const channel = member.guild.channels.cache.get(welcomeChannelId);
   if (!channel) return console.error("❌ Salon #bienvenue introuvable");
@@ -49,66 +62,56 @@ client.on('guildMemberAdd', async member => {
 
   try {
     await channel.send({ content: `<@${member.id}>`, embeds: [embed] });
-    console.log(`✅ Message de bienvenue envoyé pour ${member.user.tag}`);
   } catch (err) {
-    console.error("❌ Erreur lors de l'envoi du message :", err);
+    console.error("❌ Erreur d’envoi :", err);
   }
 });
 
-// 📜 Commande !reglement pour poster le règlement
+// 📌 !reglement
 client.on('messageCreate', async message => {
-  if (message.author.bot) return;
-  if (message.content !== '!reglement') return;
+  if (message.author.bot || message.content !== '!reglement') return;
+
+  const reglementChannel = message.guild.channels.cache.get(reglementChannelId);
+  if (!reglementChannel) return console.error("❌ Salon règlement introuvable");
 
   const embed = new EmbedBuilder()
     .setColor(0x3498db)
     .setTitle("📜 Règlement du Serveur Discord")
     .setDescription(
       "**🤝 Respect et Bienveillance**\n" +
-      "Le respect entre membres est obligatoire.\n" +
-      "On peut rire, s'insulter dans la bonne humeur, **pas de toxicité ou harcèlement**.\n\n" +
+      "Le respect est obligatoire. Humour oui, harcèlement non.\n\n" +
       "**🗣️ Comportement et Langage**\n" +
-      "Pas de propos choquants ou de spam. Reste poli même en cas de désaccord.\n\n" +
+      "Pas de spam, ni propos choquants. Soyez polis.\n\n" +
       "**📌 Sujets sensibles**\n" +
-      "Pas de politique, religion, ou NSFW (même en privé sans accord).\n\n" +
+      "Pas de NSFW ou sujets sensibles sans salon dédié.\n\n" +
       "**📣 Publicité et Partages**\n" +
-      "Pas de pub sans autorisation. Liens OK s’ils sont sûrs.\n\n" +
+      "Pas de pub sans accord. Liens OK si fiables.\n\n" +
       "**🛠️ Utilisation des salons**\n" +
-      "Respecte chaque salon. Ne ping pas inutilement.\n\n" +
+      "Respecte les thèmes, ne ping pas inutilement.\n\n" +
       "**👑 Staff et Sanctions**\n" +
-      "Le staff est là pour vous aider. Sanctions possibles si non-respect."
+      "Le staff aide, les règles sont à suivre."
     );
 
   const button = new ButtonBuilder()
     .setCustomId('accept_rules')
-    .setLabel("✅ J'accepte le règlement")
+    .setLabel("J'accepte le règlement")
     .setStyle(ButtonStyle.Primary)
     .setEmoji(emojiAccept);
 
   const row = new ActionRowBuilder().addComponents(button);
 
-  await message.channel.send({ embeds: [embed], components: [row] });
+  await reglementChannel.send({ embeds: [embed], components: [row] });
 });
 
-// 🎯 Action quand un utilisateur clique sur le bouton
-client.on('interactionCreate', async interaction => {
+// ✅ Acceptation du règlement
+client.on(Events.InteractionCreate, async interaction => {
   if (!interaction.isButton()) return;
 
   if (interaction.customId === 'accept_rules') {
-    const role = interaction.guild.roles.cache.get(membreRoleId);
-    if (!role) {
-      return interaction.reply({ content: "❌ Rôle introuvable", ephemeral: true });
-    }
-
     try {
-      await interaction.member.roles.add(role);
-      await interaction.reply({ content: "✅ Règlement accepté, rôle attribué !", ephemeral: true });
-    } catch (error) {
-      console.error("❌ Erreur attribution rôle :", error);
-      await interaction.reply({ content: "❌ Une erreur est survenue.", ephemeral: true });
-    }
-  }
-});
+      const role = interaction.guild.roles.cache.get(reglementRoleId);
+      if (!role) return;
 
-// 🔐 Connexion
-client.login(process.env.TOKEN);
+      await interaction.member.roles.add(role);
+      await interaction.reply({ content: "✅ Règlement accepté !", ephemeral: true });
+    } catch (
