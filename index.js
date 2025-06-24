@@ -207,3 +207,6 @@ Voici les commandes disponibles :
     await interaction.reply({ content: '✅ Règlement accepté. Rôle attribué.', ephemeral: true });
   }
 });
+
+// 🔐 Connexion au bot
+client.login(process.env.TOKEN);
