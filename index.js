@@ -1,51 +1,33 @@
 const express = require('express');
 const app = express();
-
 app.get('/', (req, res) => res.send('Bot en ligne !'));
 app.listen(3000, () => console.log('🟢 Web server actif !'));
 
-const { Client, GatewayIntentBits, EmbedBuilder, SlashCommandBuilder, REST, Routes, Partials, InteractionType } = require('discord.js');
+// 📦 Discord.js et environnement
+const { Client, GatewayIntentBits, EmbedBuilder, Partials } = require('discord.js');
 require('dotenv').config();
+
+// IDs des salons
+const welcomeChannelId = '1385999517983440967';
+const roleChannelId = '1385943465321566289';
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessageReactions
   ],
   partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
 
-// ID du salon #bienvenue
-const welcomeChannelId = '1385999517983440967';
-// ID du salon des rôles
-const rolesChannelId = '1385943465321566289';
-
-client.once('ready', async () => {
+// ✅ Démarrage du bot
+client.once('ready', () => {
   console.log(`✅ Bot connecté en tant que ${client.user.tag}`);
-
-  // Enregistrement de la commande slash localement
-  const commands = [
-    new SlashCommandBuilder()
-      .setName('autorole')
-      .setDescription('Affiche les rôles que les membres peuvent choisir')
-      .toJSON()
-  ];
-
-  const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
-  try {
-    await rest.put(
-      Routes.applicationGuildCommands(client.user.id, process.env.GUILD_ID),
-      { body: commands }
-    );
-    console.log('✅ Commande /autorole enregistrée');
-  } catch (error) {
-    console.error('❌ Erreur lors de l'enregistrement des commandes slash :', error);
-  }
 });
 
-// Message de bienvenue
+// 👋 Message de bienvenue
 client.on('guildMemberAdd', async member => {
   const channel = member.guild.channels.cache.get(welcomeChannelId);
   if (!channel) return console.error("❌ Salon #bienvenue introuvable");
@@ -58,39 +40,40 @@ client.on('guildMemberAdd', async member => {
 
   try {
     await channel.send({ content: `<@${member.id}>`, embeds: [embed] });
-    console.log(`✅ Message de bienvenue envoyé pour ${member.user.tag}`);
+    console.log(`✅ Message de bienvenue envoyé`);
   } catch (err) {
-    console.error("❌ Erreur lors de l'envoi du message :", err);
+    console.error("❌ Erreur d’envoi :", err);
   }
 });
 
-// Gestion de la commande /autorole
-client.on('interactionCreate', async interaction => {
-  if (interaction.type !== InteractionType.ApplicationCommand) return;
+// 🧠 Commande !autorole
+client.on('messageCreate', async message => {
+  if (message.author.bot) return;
 
-  if (interaction.commandName === 'autorole') {
-    const embed = new EmbedBuilder()
-      .setTitle('🎯 Choisis tes jeux préférés')
-      .setDescription(`🔫 Valorant
-💥 Fortnite
-🚀 Rocket League
-🎮 Autres jeux
-🔞 Salon trash`)
-      .setColor(0xffc107)
-      .setFooter({ text: 'Clique sur une réaction pour obtenir un rôle !' });
+  if (message.content === '!autorole') {
+    const msg = await message.channel.send({
+      content: `🎯 Choisis tes jeux préférés pour recevoir les notifs et pouvoir ping la commu !
+
+🔫 Valorant  
+💥 Fortnite  
+🚀 Rocket League  
+🎮 Autres jeux  
+🔞 Salon trash
+
+💡 N’hésite pas à proposer d’autres jeux dans le salon discussions si tu veux qu’on les ajoute.`,
+    });
 
     try {
-      const message = await interaction.reply({ content: 'Choisissez vos rôles ici :', embeds: [embed], fetchReply: true });
-      await message.react('🔫');
-      await message.react('💥');
-      await message.react('🚀');
-      await message.react('🎮');
-      await message.react('🔞');
+      await msg.react('🔫');
+      await msg.react('💥');
+      await msg.react('🚀');
+      await msg.react('🎮');
+      await msg.react('🔞');
     } catch (err) {
-      console.error('❌ Erreur lors de l'envoi des rôles interactifs :', err);
+      console.error("❌ Impossible d’ajouter les réactions :", err);
     }
   }
 });
 
+// 🔐 Lancement du bot
 client.login(process.env.TOKEN);
-
