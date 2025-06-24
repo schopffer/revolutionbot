@@ -4,7 +4,7 @@ const app = express();
 app.get('/', (req, res) => res.send('Bot en ligne !'));
 app.listen(3000, () => console.log('🟢 Serveur web actif sur Render'));
 
-// 📦 Chargement des modules
+// 📦 Modules et Config
 require('dotenv').config();
 const {
   Client,
@@ -17,7 +17,7 @@ const {
   Events
 } = require('discord.js');
 
-// 🤖 Initialisation du client Discord
+// 🤖 Client Discord
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -29,13 +29,13 @@ const client = new Client({
   partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
 
-// 🔢 IDs du serveur
+// 🔢 IDs à personnaliser
 const welcomeChannelId = '1385999517983440967';
 const reglementChannelId = '1385409088824938652';
 const choixRoleChannelId = '1385943465321566289';
 const membreRoleId = '1385627871023861820';
 
-// 🎭 Rôles par emoji
+// 🎮 Emoji -> Role ID
 const roles = {
   '🔫': '1385980913728487455', // Valorant
   '💥': '1386063811907162183', // Fortnite
@@ -44,7 +44,7 @@ const roles = {
   '🔞': '1386695919675769005'  // Trash
 };
 
-// 🔓 Connexion du bot
+// ✅ Bot connecté
 client.once('ready', () => {
   console.log(`✅ Connecté en tant que ${client.user.tag}`);
 });
@@ -67,26 +67,27 @@ client.on('guildMemberAdd', async member => {
   }
 });
 
-// 💬 Commandes texte (!autorole et !reglement)
+// 💬 Commandes texte
 client.on('messageCreate', async message => {
   if (message.author.bot) return;
 
-  // 📌 Commande !autorole
+  // !autorole — Embed stylisé en bleu
   if (message.content === '!autorole' && message.channel.id === choixRoleChannelId) {
     const embed = new EmbedBuilder()
       .setTitle("🎯 Choisis tes jeux préférés !")
+      .setColor(0x3498db)
       .setDescription(`
-Clique sur les réactions pour obtenir un rôle :
+Réagis avec l’un des émojis ci-dessous pour recevoir un rôle :
 
-🔫 Valorant  
-💥 Fortnite  
-🚀 Rocket League  
-🎮 Autres jeux  
-🔞 Salon trash
+> 🔫 ・ **Valorant**  
+> 💥 ・ **Fortnite**  
+> 🚀 ・ **Rocket League**  
+> 🎮 ・ **Autres jeux**  
+> 🔞 ・ **Accès salon Trash**
 
-💡 Tu peux proposer d'autres jeux dans le salon discussions.
+Tu peux modifier ton choix à tout moment en retirant ta réaction.
       `)
-      .setColor(0x5865F2);
+      .setFooter({ text: "Clique simplement sur l'émoji pour recevoir ou retirer le rôle." });
 
     try {
       const msg = await message.channel.send({ embeds: [embed] });
@@ -98,7 +99,7 @@ Clique sur les réactions pour obtenir un rôle :
     }
   }
 
-  // 📌 Commande !reglement
+  // !reglement — Embed avec bouton
   if (message.content === '!reglement' && message.channel.id === reglementChannelId) {
     const embed = new EmbedBuilder()
       .setTitle('📜 Règlement du Serveur')
@@ -141,7 +142,7 @@ Respecte les décisions du staff. Contacte un modo en cas de souci.
   }
 });
 
-// 🖱️ Gestion du bouton règlement
+// 🖱️ Bouton "Valider le règlement"
 client.on(Events.InteractionCreate, async interaction => {
   if (!interaction.isButton() || interaction.customId !== 'accepte_reglement') return;
 
@@ -161,9 +162,10 @@ client.on(Events.InteractionCreate, async interaction => {
   }
 });
 
-// 🎭 Gestion des rôles via réactions
+// 🎭 Gestion des rôles par réaction
 async function handleReaction(reaction, user, addRole = true) {
   if (user.bot) return;
+
   try {
     if (reaction.partial) await reaction.fetch();
     if (reaction.message.partial) await reaction.message.fetch();
@@ -182,7 +184,7 @@ async function handleReaction(reaction, user, addRole = true) {
       console.log(`❌ Rôle retiré à ${user.tag}`);
     }
   } catch (err) {
-    console.error("❌ Erreur gestion rôle par réaction :", err);
+    console.error("❌ Erreur rôle via réaction :", err);
   }
 }
 
@@ -194,5 +196,5 @@ client.on('messageReactionRemove', async (reaction, user) => {
   await handleReaction(reaction, user, false);
 });
 
-// 🚀 Connexion à Discord
+// 🔐 Connexion
 client.login(process.env.TOKEN);
