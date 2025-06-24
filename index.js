@@ -2,9 +2,9 @@
 const express = require('express');
 const app = express();
 app.get('/', (req, res) => res.send('Bot en ligne !'));
-app.listen(3000, () => console.log('🟢 Web server actif !'));
+app.listen(3000, () => console.log('🟢 Serveur web actif sur Render'));
 
-// 📦 Config et modules Discord
+// 📦 Chargement des modules
 require('dotenv').config();
 const {
   Client,
@@ -17,23 +17,25 @@ const {
   Events
 } = require('discord.js');
 
-// 🤖 Client Discord
+// 🤖 Initialisation du client Discord
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.MessageContent
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessageReactions
   ],
   partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
 
-// 🔢 IDs importants
+// 🔢 IDs du serveur
 const welcomeChannelId = '1385999517983440967';
 const reglementChannelId = '1385409088824938652';
-const membreRoleId = '1385627871023861820';
 const choixRoleChannelId = '1385943465321566289';
+const membreRoleId = '1385627871023861820';
 
+// 🎭 Rôles par emoji
 const roles = {
   '🔫': '1385980913728487455', // Valorant
   '💥': '1386063811907162183', // Fortnite
@@ -42,127 +44,116 @@ const roles = {
   '🔞': '1386695919675769005'  // Trash
 };
 
-// ✅ Bot prêt
+// 🔓 Connexion du bot
 client.once('ready', () => {
-  console.log(`✅ Bot connecté en tant que ${client.user.tag}`);
+  console.log(`✅ Connecté en tant que ${client.user.tag}`);
 });
 
 // 👋 Message de bienvenue
 client.on('guildMemberAdd', async member => {
-  const channel = member.guild.channels.cache.get(welcomeChannelId);
-  if (!channel) return;
-
-  const embed = new EmbedBuilder()
-    .setTitle(`Bienvenue ${member.user.username} !`)
-    .setColor(0x00AE86)
-    .setImage('https://media.giphy.com/media/DSxKEQoQix9hC/giphy.gif')
-    .setFooter({ text: 'Amuse-toi bien sur le serveur ! 🌟' });
-
   try {
+    const channel = member.guild.channels.cache.get(welcomeChannelId);
+    if (!channel) return;
+
+    const embed = new EmbedBuilder()
+      .setTitle(`Bienvenue ${member.user.username} !`)
+      .setColor(0x00AE86)
+      .setImage('https://media.giphy.com/media/DSxKEQoQix9hC/giphy.gif')
+      .setFooter({ text: 'Amuse-toi bien sur le serveur ! 🌟' });
+
     await channel.send({ content: `<@${member.id}>`, embeds: [embed] });
   } catch (err) {
-    console.error("❌ Erreur message bienvenue :", err);
+    console.error("❌ Erreur message de bienvenue :", err);
   }
 });
 
-// 🧠 Commande !autorole
+// 💬 Commandes texte (!autorole et !reglement)
 client.on('messageCreate', async message => {
-  if (message.author.bot || message.content !== '!autorole') return;
+  if (message.author.bot) return;
 
-  const msg = await message.channel.send({
-    content: `**🎯 Choisis tes jeux préférés pour recevoir les notifs et pouvoir ping la commu !**
+  // 📌 Commande !autorole
+  if (message.content === '!autorole' && message.channel.id === choixRoleChannelId) {
+    const embed = new EmbedBuilder()
+      .setTitle("🎯 Choisis tes jeux préférés !")
+      .setDescription(`
+Clique sur les réactions pour obtenir un rôle :
 
-**🔫 Valorant**  
-**💥 Fortnite**  
-**🚀 Rocket League**  
-**🎮 Autres jeux**  
-**🔞 Salon trash**
+🔫 Valorant  
+💥 Fortnite  
+🚀 Rocket League  
+🎮 Autres jeux  
+🔞 Salon trash
 
-💡 N’hésite pas à proposer d’autres jeux dans le salon discussions si tu veux qu’on les ajoute.`
-  });
+💡 Tu peux proposer d'autres jeux dans le salon discussions.
+      `)
+      .setColor(0x5865F2);
 
-  for (const emoji of Object.keys(roles)) {
-    await msg.react(emoji);
+    try {
+      const msg = await message.channel.send({ embeds: [embed] });
+      for (const emoji of Object.keys(roles)) {
+        await msg.react(emoji);
+      }
+    } catch (err) {
+      console.error("❌ Erreur envoi autorole :", err);
+    }
   }
-});
 
-// 🎭 Ajout / retrait des rôles avec réactions
-client.on('messageReactionAdd', async (reaction, user) => {
-  if (user.bot || reaction.message.channelId !== choixRoleChannelId) return;
-  if (reaction.partial) await reaction.fetch();
+  // 📌 Commande !reglement
+  if (message.content === '!reglement' && message.channel.id === reglementChannelId) {
+    const embed = new EmbedBuilder()
+      .setTitle('📜 Règlement du Serveur')
+      .setColor(0x3498db)
+      .setDescription(`
+**🤝 Respect et Bienveillance**  
+Le respect entre membres est obligatoire.  
+Pas d’insultes, harcèlement ou propos haineux.
 
-  const roleId = roles[reaction.emoji.name];
-  if (!roleId) return;
+**🗣️ Comportement et Langage**  
+Utilise un langage approprié, pas de spam ou pub.  
+Reste poli même en cas de désaccord.
 
-  const member = await reaction.message.guild.members.fetch(user.id);
-  await member.roles.add(roleId).catch(console.error);
-});
+**📌 Sujets sensibles**  
+Évite politique, religion, contenu NSFW.
 
-client.on('messageReactionRemove', async (reaction, user) => {
-  if (user.bot || reaction.message.channelId !== choixRoleChannelId) return;
-  if (reaction.partial) await reaction.fetch();
+**📢 Publicité et Partages**  
+Pas de pub sans autorisation. Liens non nuisibles.
 
-  const roleId = roles[reaction.emoji.name];
-  if (!roleId) return;
+**🛠️ Utilisation des salons**  
+Respecte les thèmes, ne spam pas les pings.
 
-  const member = await reaction.message.guild.members.fetch(user.id);
-  await member.roles.remove(roleId).catch(console.error);
-});
+**👑 Staff et Sanctions**  
+Respecte les décisions du staff. Contacte un modo en cas de souci.
+      `);
 
-// 📜 Commande !reglement
-client.on('messageCreate', async message => {
-  if (message.author.bot || message.content !== '!reglement') return;
-
-  const embed = new EmbedBuilder()
-    .setTitle('📜 Règlement du Serveur Discord')
-    .setColor(0x3498db)
-    .setDescription(
-      '**🤝 Respect et Bienveillance**  \n' +
-      'Le respect entre membres est obligatoire.  \n' +
-      'Pas d’insultes, harcèlement ou propos haineux.  \n\n' +
-      '**🗣️ Comportement et Langage**  \n' +
-      'Utilise un langage approprié, pas de spam ou pub.  \n' +
-      'Reste poli même en cas de désaccord.  \n\n' +
-      '**📌 Sujets sensibles**  \n' +
-      'Évite politique, religion, contenu NSFW.  \n\n' +
-      '**📢 Publicité et Partages**  \n' +
-      'Pas de pub sans autorisation. Liens non nuisibles.  \n\n' +
-      '**🛠️ Utilisation des salons**  \n' +
-      'Respecte les thèmes, ne spam pas les pings.  \n\n' +
-      '**👑 Staff et Sanctions**  \n' +
-      'Respecte les décisions du staff. Contacte un modo en cas de souci.'
+    const bouton = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('accepte_reglement')
+        .setLabel('Valider le règlement')
+        .setStyle(ButtonStyle.Primary)
+        .setEmoji('☑️')
     );
 
-  const bouton = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId('accepte_reglement')
-      .setLabel('Valider le règlement')
-      .setStyle(ButtonStyle.Primary)
-      .setEmoji('☑️') // Emoji standard pour éviter les bugs
-  );
-
-  try {
-    const channel = await client.channels.fetch(reglementChannelId);
-    await channel.send({ embeds: [embed], components: [bouton] });
-  } catch (err) {
-    console.error("❌ Erreur envoi règlement :", err);
+    try {
+      await message.channel.send({ embeds: [embed], components: [bouton] });
+    } catch (err) {
+      console.error("❌ Erreur envoi règlement :", err);
+    }
   }
 });
 
-// ✅ Bouton de validation du règlement
+// 🖱️ Gestion du bouton règlement
 client.on(Events.InteractionCreate, async interaction => {
   if (!interaction.isButton() || interaction.customId !== 'accepte_reglement') return;
 
   try {
     const member = await interaction.guild.members.fetch(interaction.user.id);
     await member.roles.add(membreRoleId);
-
     await interaction.reply({
-      content: `✅ Règlement accepté. Rôle 💎 Membre attribué à <@${member.id}> !`,
+      content: `✅ Règlement accepté ! Rôle 💎 Membre attribué à <@${member.id}>.`,
       ephemeral: true
     });
   } catch (err) {
-    console.error("❌ Erreur lors de l'ajout du rôle membre :", err);
+    console.error("❌ Erreur attribution rôle règlement :", err);
     await interaction.reply({
       content: "❌ Une erreur est survenue lors de l'ajout du rôle.",
       ephemeral: true
@@ -170,5 +161,38 @@ client.on(Events.InteractionCreate, async interaction => {
   }
 });
 
-// 🔐 Connexion du bot
+// 🎭 Gestion des rôles via réactions
+async function handleReaction(reaction, user, addRole = true) {
+  if (user.bot) return;
+  try {
+    if (reaction.partial) await reaction.fetch();
+    if (reaction.message.partial) await reaction.message.fetch();
+
+    if (reaction.message.channelId !== choixRoleChannelId) return;
+
+    const roleId = roles[reaction.emoji.name];
+    if (!roleId) return;
+
+    const member = await reaction.message.guild.members.fetch(user.id);
+    if (addRole) {
+      await member.roles.add(roleId);
+      console.log(`✅ Rôle ajouté à ${user.tag}`);
+    } else {
+      await member.roles.remove(roleId);
+      console.log(`❌ Rôle retiré à ${user.tag}`);
+    }
+  } catch (err) {
+    console.error("❌ Erreur gestion rôle par réaction :", err);
+  }
+}
+
+client.on('messageReactionAdd', async (reaction, user) => {
+  await handleReaction(reaction, user, true);
+});
+
+client.on('messageReactionRemove', async (reaction, user) => {
+  await handleReaction(reaction, user, false);
+});
+
+// 🚀 Connexion à Discord
 client.login(process.env.TOKEN);
