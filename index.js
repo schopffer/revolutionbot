@@ -1,4 +1,3 @@
-// 🌐 Mini serveur Express pour maintenir le bot actif (utile avec Render ou UptimeRobot)
 const express = require('express');
 const app = express();
 
