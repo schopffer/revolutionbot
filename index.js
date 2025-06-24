@@ -95,10 +95,14 @@ client.on('guildMemberAdd', async member => {
 
 // 📦 Interaction Handler (slash + boutons)
 client.on(Events.InteractionCreate, async interaction => {
+  if (!interaction.isCommand() && !interaction.isButton()) return;
+
   if (interaction.isCommand()) {
     const { commandName } = interaction;
 
     if (commandName === 'autorole') {
+      await interaction.reply({ content: '📩 Menu autorole envoyé dans ce salon.', ephemeral: true });
+
       const embed = new EmbedBuilder()
         .setTitle('🎯 Choisis tes jeux préférés !')
         .setColor(0x3498db)
@@ -115,10 +119,11 @@ Réagis avec un émoji pour recevoir un rôle :
 
       const msg = await interaction.channel.send({ embeds: [embed] });
       for (const emoji of Object.keys(roles)) await msg.react(emoji);
-      await interaction.reply({ content: '📩 Menu autorole envoyé.', ephemeral: true });
     }
 
     if (commandName === 'reglement') {
+      await interaction.reply({ content: '📩 Règlement envoyé dans ce salon.', ephemeral: true });
+
       const embed = new EmbedBuilder()
         .setTitle('📜 Règlement du Serveur')
         .setColor(0x3498db)
@@ -140,7 +145,6 @@ Réagis avec un émoji pour recevoir un rôle :
       );
 
       await interaction.channel.send({ embeds: [embed], components: [bouton] });
-      await interaction.reply({ content: '📩 Règlement affiché.', ephemeral: true });
     }
 
     if (commandName === 'help') {
@@ -191,8 +195,7 @@ Voici les commandes disponibles :
       const member = interaction.guild.members.cache.get(user.id);
       if (!member) return interaction.reply({ content: '❌ Membre introuvable.', ephemeral: true });
 
-      // Timeout pendant 1 jour
-      const timeoutDuration = 24 * 60 * 60 * 1000; // 24h en ms
+      const timeoutDuration = 24 * 60 * 60 * 1000;
       await member.timeout(timeoutDuration, 'Mute par commande modérateur');
       await interaction.reply({ content: `🔇 <@${user.id}> a été rendu muet pendant 24h.` });
     }
