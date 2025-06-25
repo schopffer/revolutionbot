@@ -77,14 +77,16 @@ client.once('ready', async () => {
     console.error('❌ Erreur enregistrement slash commands :', err);
   }
 });
-
 // 👋 Message de bienvenue avec gif aléatoire
+client.removeAllListeners('guildMemberAdd');
+
 client.on('guildMemberAdd', async member => {
   const gifs = [
-    'https://media.giphy.com/media/DSxKEQoQix9hC/giphy.gif',
-    'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
-    'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
-    'https://media.giphy.com/media/xT9IgG50Fb7Mi0prBC/giphy.gif'
+    'https://media1.giphy.com/media/q8ld8Sk7WWyY0/giphy.gif',
+    'https://media1.giphy.com/media/9az09tlYyYNfq/giphy.gif',
+    'https://media1.giphy.com/media/PoK3zuKMTYqNUFFbaG/giphy.gif',
+    'https://media1.giphy.com/media/A8v23NdA9fGZW/giphy.gif',
+    'https://media1.giphy.com/media/13Uqp5IGFpmDle/giphy.gif'
   ];
   const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
   const channel = member.guild.channels.cache.get(welcomeChannelId);
