@@ -4,7 +4,7 @@ const app = express();
 app.get('/', (req, res) => res.send('Bot en ligne !'));
 app.listen(3000, () => console.log('🟢 Serveur web actif'));
 
-// 📆 Modules Discord.js
+// 📦 Modules Discord.js
 require('dotenv').config();
 const {
   Client,
@@ -28,7 +28,8 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMessageReactions
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildPresences
   ],
   partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
@@ -69,8 +70,12 @@ client.once('ready', async () => {
   ].map(cmd => cmd.toJSON());
 
   const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
+
   try {
-    await rest.put(Routes.applicationGuildCommands(client.user.id, GUILD_ID), { body: commands });
+    await rest.put(
+      Routes.applicationGuildCommands(client.user.id, GUILD_ID),
+      { body: commands }
+    );
     console.log('✅ Slash commands enregistrées');
   } catch (err) {
     console.error('❌ Erreur enregistrement slash commands :', err);
@@ -81,15 +86,17 @@ client.once('ready', async () => {
 client.on('guildMemberAdd', async member => {
   const channel = member.guild.channels.cache.get(welcomeChannelId);
   if (!channel) return;
+
   const embed = new EmbedBuilder()
     .setTitle(`Bienvenue ${member.user.username} !`)
     .setColor(0x00AE86)
     .setImage('https://media.giphy.com/media/DSxKEQoQix9hC/giphy.gif')
     .setFooter({ text: 'Amuse-toi bien sur le serveur ! 🌟' });
+
   await channel.send({ content: `<@${member.id}>`, embeds: [embed] });
 });
 
-// 📦 Slash + bouton handler
+// 📦 Interaction Handler (slash + boutons)
 client.on(Events.InteractionCreate, async interaction => {
   if (!interaction.isCommand() && !interaction.isButton()) return;
 
@@ -100,7 +107,9 @@ client.on(Events.InteractionCreate, async interaction => {
       if (interaction.channel.id !== choixRoleChannelId) {
         return interaction.reply({ content: '❌ Utilise cette commande dans le salon autorole.', ephemeral: true });
       }
+
       await interaction.reply({ content: '📩 Menu autorole envoyé dans ce salon.', ephemeral: true });
+
       const embed = new EmbedBuilder()
         .setTitle('🎯 Choisis tes jeux préférés !')
         .setColor(0x3498db)
@@ -116,12 +125,14 @@ Réagis avec un émoji pour recevoir un rôle :
 💡 N’hésite pas à proposer d’autres jeux dans le salon discussions si tu veux qu’on les ajoute.
         `)
         .setFooter({ text: 'Clique sur un émoji ci-dessous pour recevoir ou retirer un rôle.' });
+
       const msg = await interaction.channel.send({ embeds: [embed] });
       for (const emoji of Object.keys(roles)) await msg.react(emoji);
     }
 
     if (commandName === 'reglement') {
       await interaction.reply({ content: '📩 Règlement envoyé dans ce salon.', ephemeral: true });
+
       const embed = new EmbedBuilder()
         .setTitle('📜 Règlement du Serveur')
         .setColor(0x3498db)
@@ -133,6 +144,7 @@ Réagis avec un émoji pour recevoir un rôle :
 **🛠️ Utilisation des salons** : respectez les thèmes.
 **👑 Staff** : respect des décisions.
         `);
+
       const bouton = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId('accepte_reglement')
@@ -140,6 +152,7 @@ Réagis avec un émoji pour recevoir un rôle :
           .setStyle(ButtonStyle.Primary)
           .setEmoji('☑️')
       );
+
       await interaction.channel.send({ embeds: [embed], components: [bouton] });
     }
 
@@ -165,6 +178,7 @@ Réagis avec un émoji pour recevoir un rôle :
       const user = interaction.options.getUser('membre');
       const member = interaction.guild.members.cache.get(user.id);
       if (!member) return interaction.reply({ content: '❌ Membre introuvable.', ephemeral: true });
+
       await member.ban();
       await interaction.reply({ content: `🔨 <@${user.id}> a été banni.` });
     }
@@ -176,6 +190,7 @@ Réagis avec un émoji pour recevoir un rôle :
       const user = interaction.options.getUser('membre');
       const member = interaction.guild.members.cache.get(user.id);
       if (!member) return interaction.reply({ content: '❌ Membre introuvable.', ephemeral: true });
+
       await member.kick();
       await interaction.reply({ content: `🦶 <@${user.id}> a été expulsé.` });
     }
@@ -187,6 +202,7 @@ Réagis avec un émoji pour recevoir un rôle :
       const user = interaction.options.getUser('membre');
       const member = interaction.guild.members.cache.get(user.id);
       if (!member) return interaction.reply({ content: '❌ Membre introuvable.', ephemeral: true });
+
       const timeoutDuration = 24 * 60 * 60 * 1000;
       await member.timeout(timeoutDuration, 'Mute par commande modérateur');
       await interaction.reply({ content: `🔇 <@${user.id}> a été rendu muet pendant 24h.` });
@@ -196,12 +212,14 @@ Réagis avec un émoji pour recevoir un rôle :
       if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers)) {
         return interaction.reply({ content: '❌ Tu n’as pas la permission de débannir.', ephemeral: true });
       }
+
       const userId = interaction.options.getString('userid');
+
       try {
         await interaction.guild.members.unban(userId);
         await interaction.reply({ content: `🔓 L'utilisateur avec l'ID \`${userId}\` a été débanni.` });
       } catch (error) {
-        console.error('❌ Erreur unban :', error);
+        console.error("❌ Erreur unban :", error);
         await interaction.reply({ content: `❌ Impossible de débannir l'utilisateur avec l'ID \`${userId}\`.` });
       }
     }
@@ -214,54 +232,123 @@ Réagis avec un émoji pour recevoir un rôle :
   }
 });
 
-// 🌺 Rôles par réactions
+// 🎭 Gestion des rôles via réactions
 async function handleReaction(reaction, user, add = true) {
   try {
     if (reaction.partial) await reaction.fetch();
     if (reaction.message.partial) await reaction.message.fetch();
-    if (user.bot || reaction.message.channelId !== choixRoleChannelId) return;
+    if (user.bot) return;
+
+    if (reaction.message.channelId !== choixRoleChannelId) return;
+
     const roleId = roles[reaction.emoji.name];
     if (!roleId) return;
+
     const member = await reaction.message.guild.members.fetch(user.id);
-    if (add) await member.roles.add(roleId);
-    else await member.roles.remove(roleId);
+    if (add) {
+      await member.roles.add(roleId);
+    } else {
+      await member.roles.remove(roleId);
+    }
   } catch (err) {
-    console.error('❌ Erreur rôle via réaction :', err);
+    console.error("❌ Erreur rôle via réaction :", err);
   }
 }
+
 client.on('messageReactionAdd', (reaction, user) => handleReaction(reaction, user, true));
 client.on('messageReactionRemove', (reaction, user) => handleReaction(reaction, user, false));
 
-// 📜 Logs type Carl-bot
-client.on('guildBanAdd', async ban => {
-  const channel = ban.guild.channels.cache.get(logChannelId);
-  if (channel) channel.send(`🔨 **Ban** : ${ban.user.tag} (\`${ban.user.id}\`) a été banni.`);
+// 📑 LOGS EMBEDS
+client.on('guildBanAdd', async (guild, user) => {
+  const logChannel = guild.channels.cache.get(logChannelId);
+  if (!logChannel) return;
+  const embed = new EmbedBuilder()
+    .setTitle('🔨 Membre banni')
+    .setColor(0xff0000)
+    .addFields(
+      { name: 'Utilisateur', value: `${user.tag} (\`${user.id}\`)` },
+      { name: 'Date', value: `<t:${Math.floor(Date.now() / 1000)}:F>` }
+    );
+  logChannel.send({ embeds: [embed] });
 });
-client.on('guildBanRemove', async ban => {
-  const channel = ban.guild.channels.cache.get(logChannelId);
-  if (channel) channel.send(`♻️ **Unban** : ${ban.user.tag} (\`${ban.user.id}\`) a été débanni.`);
+
+client.on('guildBanRemove', async (guild, user) => {
+  const logChannel = guild.channels.cache.get(logChannelId);
+  if (!logChannel) return;
+  const embed = new EmbedBuilder()
+    .setTitle('🔓 Membre débanni')
+    .setColor(0x00ff00)
+    .addFields(
+      { name: 'Utilisateur', value: `${user.tag} (\`${user.id}\`)` },
+      { name: 'Date', value: `<t:${Math.floor(Date.now() / 1000)}:F>` }
+    );
+  logChannel.send({ embeds: [embed] });
 });
+
 client.on('messageDelete', async message => {
-  const channel = message.guild?.channels.cache.get(logChannelId);
-  if (channel && !message.partial && !message.author?.bot) {
-    channel.send(`🗑️ **Message supprimé** par <@${message.author.id}> dans <#${message.channel.id}> :\n\`${message.content || 'Contenu indisponible'}\``);
-  }
+  const logChannel = message.guild.channels.cache.get(logChannelId);
+  if (!logChannel || !message.content || message.author?.bot) return;
+  const embed = new EmbedBuilder()
+    .setTitle('🗑️ Message supprimé')
+    .setColor(0x808080)
+    .addFields(
+      { name: 'Auteur', value: `${message.author.tag} (\`${message.author.id}\`)` },
+      { name: 'Contenu', value: message.content.substring(0, 1000) },
+      { name: 'Salon', value: `<#${message.channel.id}>` },
+      { name: 'Date', value: `<t:${Math.floor(Date.now() / 1000)}:F>` }
+    );
+  logChannel.send({ embeds: [embed] });
 });
+
 client.on('messageUpdate', async (oldMsg, newMsg) => {
-  const channel = oldMsg.guild?.channels.cache.get(logChannelId);
-  if (!channel || oldMsg.partial || newMsg.partial || oldMsg.author?.bot || oldMsg.content === newMsg.content) return;
-  channel.send(`✏️ **Message édité** par <@${oldMsg.author.id}> dans <#${oldMsg.channel.id}> :\n**Avant** : \`${oldMsg.content}\`\n**Après** : \`${newMsg.content}\``);
+  const logChannel = newMsg.guild.channels.cache.get(logChannelId);
+  if (!logChannel || oldMsg.content === newMsg.content) return;
+  const embed = new EmbedBuilder()
+    .setTitle('✏️ Message modifié')
+    .setColor(0xffff00)
+    .addFields(
+      { name: 'Auteur', value: `${newMsg.author.tag} (\`${newMsg.author.id}\`)` },
+      { name: 'Avant', value: oldMsg.content.substring(0, 1000) || 'vide' },
+      { name: 'Après', value: newMsg.content.substring(0, 1000) || 'vide' },
+      { name: 'Salon', value: `<#${newMsg.channel.id}>` },
+      { name: 'Date', value: `<t:${Math.floor(Date.now() / 1000)}:F>` }
+    );
+  logChannel.send({ embeds: [embed] });
 });
+
 client.on('guildMemberUpdate', async (oldMember, newMember) => {
-  const channel = newMember.guild.channels.cache.get(logChannelId);
-  if (!channel) return;
+  const logChannel = newMember.guild.channels.cache.get(logChannelId);
+  if (!logChannel) return;
+  const embeds = [];
+
   if (oldMember.nickname !== newMember.nickname) {
-    channel.send(`🪪 **Pseudo modifié** : <@${newMember.id}> — \`${oldMember.nickname || oldMember.user.username}\` ➜ \`${newMember.nickname || newMember.user.username}\``);
+    const embed = new EmbedBuilder()
+      .setTitle('📝 Changement de pseudo')
+      .setColor(0x00ced1)
+      .addFields(
+        { name: 'Utilisateur', value: `${newMember.user.tag} (\`${newMember.user.id}\`)` },
+        { name: 'Avant', value: oldMember.nickname || 'Aucun' },
+        { name: 'Après', value: newMember.nickname || 'Aucun' }
+      );
+    embeds.push(embed);
   }
-  const added = newMember.roles.cache.filter(r => !oldMember.roles.cache.has(r.id));
-  for (const role of added.values()) channel.send(`➕ **Rôle ajouté** à <@${newMember.id}> : ${role.name}`);
-  const removed = oldMember.roles.cache.filter(r => !newMember.roles.cache.has(r.id));
-  for (const role of removed.values()) channel.send(`➖ **Rôle retiré** à <@${newMember.id}> : ${role.name}`);
+
+  const addedRoles = newMember.roles.cache.filter(role => !oldMember.roles.cache.has(role.id));
+  const removedRoles = oldMember.roles.cache.filter(role => !newMember.roles.cache.has(role.id));
+
+  if (addedRoles.size > 0 || removedRoles.size > 0) {
+    const embed = new EmbedBuilder()
+      .setTitle('🎭 Mise à jour des rôles')
+      .setColor(0x9370db)
+      .addFields(
+        { name: 'Utilisateur', value: `${newMember.user.tag} (\`${newMember.user.id}\`)` },
+        { name: 'Ajoutés', value: addedRoles.map(r => r.name).join(', ') || 'Aucun' },
+        { name: 'Retirés', value: removedRoles.map(r => r.name).join(', ') || 'Aucun' }
+      );
+    embeds.push(embed);
+  }
+
+  for (const embed of embeds) logChannel.send({ embeds: [embed] });
 });
 
 // 🔐 Connexion
