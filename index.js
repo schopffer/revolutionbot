@@ -32,6 +32,27 @@ const client = new Client({
     GatewayIntentBits.GuildPresences
   ],
   partials: [Partials.Message, Partials.Channel, Partials.Reaction]
+    if (commandName === 'reglement') {
+      await interaction.reply({ content: '📩 Règlement envoyé dans ce salon.', ephemeral: true });
+      const embed = new EmbedBuilder()
+        .setTitle('📜 Règlement du Serveur')
+        .setColor(0x3498db)
+        .setDescription(`
+**🤝 Respect** : soyez bienveillant.
+**🗣️ Langage** : pas de spam, pub, propos haineux.
+**📌 Sujets sensibles** : pas de politique, religion, NSFW.
+**📢 Publicité** : interdite sans accord.
+**🛠️ Utilisation des salons** : respectez les thèmes.
+**👑 Staff** : respect des décisions.
+        `);
+      const bouton = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('accepte_reglement')
+          .setLabel('Valider le règlement')
+          .setStyle(ButtonStyle.Primary)
+      );
+      await interaction.channel.send({ embeds: [embed], components: [bouton] });
+    }
 });
 
 // 🔢 IDs personnalisés
@@ -81,6 +102,27 @@ client.once('ready', async () => {
   } catch (err) {
     console.error('❌ Erreur enregistrement slash commands :', err);
   }
+    if (commandName === 'reglement') {
+      await interaction.reply({ content: '📩 Règlement envoyé dans ce salon.', ephemeral: true });
+      const embed = new EmbedBuilder()
+        .setTitle('📜 Règlement du Serveur')
+        .setColor(0x3498db)
+        .setDescription(`
+**🤝 Respect** : soyez bienveillant.
+**🗣️ Langage** : pas de spam, pub, propos haineux.
+**📌 Sujets sensibles** : pas de politique, religion, NSFW.
+**📢 Publicité** : interdite sans accord.
+**🛠️ Utilisation des salons** : respectez les thèmes.
+**👑 Staff** : respect des décisions.
+        `);
+      const bouton = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('accepte_reglement')
+          .setLabel('Valider le règlement')
+          .setStyle(ButtonStyle.Primary)
+      );
+      await interaction.channel.send({ embeds: [embed], components: [bouton] });
+    }
 });
 
 // 🎉 Message de bienvenue avec GIF en grand
@@ -105,6 +147,27 @@ client.on('guildMemberAdd', async member => {
 
   await channel.send({ content: `<@${member.id}>`, embeds: [embed] });
   await channel.send(gif);
+    if (commandName === 'reglement') {
+      await interaction.reply({ content: '📩 Règlement envoyé dans ce salon.', ephemeral: true });
+      const embed = new EmbedBuilder()
+        .setTitle('📜 Règlement du Serveur')
+        .setColor(0x3498db)
+        .setDescription(`
+**🤝 Respect** : soyez bienveillant.
+**🗣️ Langage** : pas de spam, pub, propos haineux.
+**📌 Sujets sensibles** : pas de politique, religion, NSFW.
+**📢 Publicité** : interdite sans accord.
+**🛠️ Utilisation des salons** : respectez les thèmes.
+**👑 Staff** : respect des décisions.
+        `);
+      const bouton = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('accepte_reglement')
+          .setLabel('Valider le règlement')
+          .setStyle(ButtonStyle.Primary)
+      );
+      await interaction.channel.send({ embeds: [embed], components: [bouton] });
+    }
 });
 
 // 📦 Interaction Handler
@@ -187,8 +250,28 @@ client.on(Events.InteractionCreate, async interaction => {
 
     // suite dans le prochain bloc
   }
-});
     if (commandName === 'reglement') {
+      await interaction.reply({ content: '📩 Règlement envoyé dans ce salon.', ephemeral: true });
+      const embed = new EmbedBuilder()
+        .setTitle('📜 Règlement du Serveur')
+        .setColor(0x3498db)
+        .setDescription(`
+**🤝 Respect** : soyez bienveillant.
+**🗣️ Langage** : pas de spam, pub, propos haineux.
+**📌 Sujets sensibles** : pas de politique, religion, NSFW.
+**📢 Publicité** : interdite sans accord.
+**🛠️ Utilisation des salons** : respectez les thèmes.
+**👑 Staff** : respect des décisions.
+        `);
+      const bouton = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('accepte_reglement')
+          .setLabel('Valider le règlement')
+          .setStyle(ButtonStyle.Primary)
+      );
+      await interaction.channel.send({ embeds: [embed], components: [bouton] });
+    }
+});
       await interaction.reply({ content: '📩 Règlement envoyé dans ce salon.', ephemeral: true });
 
       const embed = new EmbedBuilder()
@@ -292,6 +375,27 @@ Réagis avec un émoji pour recevoir un rôle :
     await member.roles.add(membreRoleId);
     await interaction.reply({ content: '✅ Règlement accepté. Rôle attribué.', ephemeral: true });
   }
+    if (commandName === 'reglement') {
+      await interaction.reply({ content: '📩 Règlement envoyé dans ce salon.', ephemeral: true });
+      const embed = new EmbedBuilder()
+        .setTitle('📜 Règlement du Serveur')
+        .setColor(0x3498db)
+        .setDescription(`
+**🤝 Respect** : soyez bienveillant.
+**🗣️ Langage** : pas de spam, pub, propos haineux.
+**📌 Sujets sensibles** : pas de politique, religion, NSFW.
+**📢 Publicité** : interdite sans accord.
+**🛠️ Utilisation des salons** : respectez les thèmes.
+**👑 Staff** : respect des décisions.
+        `);
+      const bouton = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('accepte_reglement')
+          .setLabel('Valider le règlement')
+          .setStyle(ButtonStyle.Primary)
+      );
+      await interaction.channel.send({ embeds: [embed], components: [bouton] });
+    }
 });
 
 // 🎭 Gestion des rôles par réactions
@@ -326,6 +430,27 @@ client.on('guildBanAdd', async (guild, user) => {
       { name: 'Date', value: `<t:${Math.floor(Date.now() / 1000)}:F>` }
     );
   logChannel.send({ embeds: [embed] });
+    if (commandName === 'reglement') {
+      await interaction.reply({ content: '📩 Règlement envoyé dans ce salon.', ephemeral: true });
+      const embed = new EmbedBuilder()
+        .setTitle('📜 Règlement du Serveur')
+        .setColor(0x3498db)
+        .setDescription(`
+**🤝 Respect** : soyez bienveillant.
+**🗣️ Langage** : pas de spam, pub, propos haineux.
+**📌 Sujets sensibles** : pas de politique, religion, NSFW.
+**📢 Publicité** : interdite sans accord.
+**🛠️ Utilisation des salons** : respectez les thèmes.
+**👑 Staff** : respect des décisions.
+        `);
+      const bouton = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('accepte_reglement')
+          .setLabel('Valider le règlement')
+          .setStyle(ButtonStyle.Primary)
+      );
+      await interaction.channel.send({ embeds: [embed], components: [bouton] });
+    }
 });
 
 client.on('messageDelete', async message => {
@@ -341,6 +466,27 @@ client.on('messageDelete', async message => {
       { name: 'Date', value: `<t:${Math.floor(Date.now() / 1000)}:F>` }
     );
   logChannel.send({ embeds: [embed] });
+    if (commandName === 'reglement') {
+      await interaction.reply({ content: '📩 Règlement envoyé dans ce salon.', ephemeral: true });
+      const embed = new EmbedBuilder()
+        .setTitle('📜 Règlement du Serveur')
+        .setColor(0x3498db)
+        .setDescription(`
+**🤝 Respect** : soyez bienveillant.
+**🗣️ Langage** : pas de spam, pub, propos haineux.
+**📌 Sujets sensibles** : pas de politique, religion, NSFW.
+**📢 Publicité** : interdite sans accord.
+**🛠️ Utilisation des salons** : respectez les thèmes.
+**👑 Staff** : respect des décisions.
+        `);
+      const bouton = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('accepte_reglement')
+          .setLabel('Valider le règlement')
+          .setStyle(ButtonStyle.Primary)
+      );
+      await interaction.channel.send({ embeds: [embed], components: [bouton] });
+    }
 });
 
 // 🔐 Lancement du bot
