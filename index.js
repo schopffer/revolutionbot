@@ -83,7 +83,7 @@ client.once('ready', async () => {
 // Suppression des anciens listeners pour éviter les doublons
 client.removeAllListeners('guildMemberAdd');
 
-client.on('guildMemberAdd', async member => {
+client.on('guildMemberAdd', async (member) => {
   const gifs = [
     'https://media1.giphy.com/media/q8ld8Sk7WWyY0/giphy.gif',
     'https://media1.giphy.com/media/9az09tlYyYNfq/giphy.gif',
