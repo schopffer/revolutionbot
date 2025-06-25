@@ -41,7 +41,7 @@ const GUILD_ID = '1385409088263028939';
 const welcomeChannelId = '1385999517983440967';
 const reglementChannelId = '1385409088824938652';
 const choixRoleChannelId = '1385943465321566289';
-const membreRoleId = '1385627871023861820';
+const membreRoleId = '1385627871023861820'; // Rôle membre pour accès blague + attribution règlement
 const logChannelId = '1385651948094623865';
 
 // 🎮 Rôles par emoji
@@ -84,6 +84,7 @@ client.once('ready', async () => {
 // Suppression des anciens listeners pour éviter les doublons
 client.removeAllListeners('guildMemberAdd');
 
+// 👋 Message de bienvenue avec gif aléatoire
 client.on('guildMemberAdd', async (member) => {
   const gifs = [
     'https://media1.giphy.com/media/q8ld8Sk7WWyY0/giphy.gif',
@@ -222,6 +223,11 @@ Réagis avec un émoji pour recevoir un rôle :
     }
 
     if (commandName === 'blague') {
+      // Vérifie que l’utilisateur a le rôle membre
+      if (!interaction.member.roles.cache.has(membreRoleId)) {
+        return interaction.reply({ content: '❌ Tu dois avoir le rôle membre pour utiliser cette commande.', ephemeral: true });
+      }
+
       const blagues = [
         "Pourquoi les canards ont-ils autant de plumes ? Pour couvrir leur derrière !",
         "Quel est le comble pour un électricien ? De ne pas être au courant.",
