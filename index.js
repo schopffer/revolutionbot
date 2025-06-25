@@ -82,16 +82,31 @@ client.once('ready', async () => {
   }
 });
 
-// 👋 Message de bienvenue
+// 👋 Message de bienvenue avec GIF One Piece (grand format)
+const gifsBienvenue = [
+  'https://media.giphy.com/media/q8ld8Sk7WWyY0/giphy.gif',
+  'https://media.giphy.com/media/9az09tlYyYNfq/giphy.gif',
+  'https://media.giphy.com/media/PoK3zuKMTYqNUFFbaG/giphy.gif',
+  'https://media.giphy.com/media/A8v23NdA9fGZW/giphy.gif',
+  'https://media.giphy.com/media/13Uqp5IGFpmDle/giphy.gif'
+];
+
 client.on('guildMemberAdd', async member => {
   const channel = member.guild.channels.cache.get(welcomeChannelId);
   if (!channel) return;
 
+  const gifChoisi = gifsBienvenue[Math.floor(Math.random() * gifsBienvenue.length)];
+
   const embed = new EmbedBuilder()
     .setTitle(`Bienvenue ${member.user.username} !`)
     .setColor(0x00AE86)
-    .setImage('https://media.giphy.com/media/DSxKEQoQix9hC/giphy.gif')
     .setFooter({ text: 'Amuse-toi bien sur le serveur ! 🌟' });
+
+  await channel.send({
+    content: `<@${member.id}>\n${gifChoisi}`,
+    embeds: [embed]
+  });
+});
 
   await channel.send({ content: `<@${member.id}>`, embeds: [embed] });
 });
