@@ -80,12 +80,19 @@ client.once('ready', async () => {
 
 // 👋 Message de bienvenue
 client.on('guildMemberAdd', async member => {
+  const gifs = [
+    'https://media.giphy.com/media/DSxKEQoQix9hC/giphy.gif',
+    'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
+    'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
+    'https://media.giphy.com/media/xT9IgG50Fb7Mi0prBC/giphy.gif'
+  ];
+  const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
   const channel = member.guild.channels.cache.get(welcomeChannelId);
   if (!channel) return;
   const embed = new EmbedBuilder()
     .setTitle(`Bienvenue ${member.user.username} !`)
     .setColor(0x00AE86)
-    .setImage('https://media.giphy.com/media/DSxKEQoQix9hC/giphy.gif')
+    .setImage(randomGif)
     .setFooter({ text: 'Amuse-toi bien sur le serveur ! 🌟' });
   await channel.send({ content: `<@${member.id}>`, embeds: [embed] });
 });
