@@ -4,7 +4,7 @@ const app = express();
 app.get('/', (req, res) => res.send('Bot en ligne !'));
 app.listen(3000, () => console.log('🟢 Serveur web actif'));
 
-// 📦 Modules Discord.js
+// 📆 Modules Discord.js
 require('dotenv').config();
 const {
   Client,
@@ -28,31 +28,9 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMessageReactions,
-    GatewayIntentBits.GuildPresences
+    GatewayIntentBits.GuildMessageReactions
   ],
-  partials: [Partials.Message, Partials.Channel, Partials.Reaction],
-    if (commandName === 'reglement') {
-      await interaction.reply({ content: '📩 Règlement envoyé dans ce salon.', ephemeral: true });
-      const embed = new EmbedBuilder()
-        .setTitle('📜 Règlement du Serveur')
-        .setColor(0x3498db)
-        .setDescription(`
-**🤝 Respect** : soyez bienveillant.
-**🗣️ Langage** : pas de spam, pub, propos haineux.
-**📌 Sujets sensibles** : pas de politique, religion, NSFW.
-**📢 Publicité** : interdite sans accord.
-**🛠️ Utilisation des salons** : respectez les thèmes.
-**👑 Staff** : respect des décisions.
-        `);
-      const bouton = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('accepte_reglement')
-          .setLabel('Valider le règlement')
-          .setStyle(ButtonStyle.Primary)
-      );
-      await interaction.channel.send({ embeds: [embed], components: [bouton] });
-    }
+  partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
 
 // 🔢 IDs personnalisés
@@ -87,66 +65,62 @@ client.once('ready', async () => {
     new SlashCommandBuilder().setName('mute').setDescription('Rendre un membre muet').addUserOption(option =>
       option.setName('membre').setDescription('Membre à rendre muet').setRequired(true)),
     new SlashCommandBuilder().setName('unban').setDescription('Débannir un membre').addStringOption(option =>
-      option.setName('userid').setDescription('ID du membre à débannir').setRequired(true)),
-    new SlashCommandBuilder().setName('blague').setDescription('Envoie une blague aléatoire')
+      option.setName('userid').setDescription("ID du membre à débannir").setRequired(true)),
+    new SlashCommandBuilder().setName('blague').setDescription('Raconte une blague pour rigoler 😄')
   ].map(cmd => cmd.toJSON());
 
   const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
-
   try {
-    await rest.put(
-      Routes.applicationGuildCommands(client.user.id, GUILD_ID),
-      { body: commands }
-    );
+    await rest.put(Routes.applicationGuildCommands(client.user.id, GUILD_ID), { body: commands });
     console.log('✅ Slash commands enregistrées');
   } catch (err) {
     console.error('❌ Erreur enregistrement slash commands :', err);
   }
-    if (commandName === 'reglement') {
-      await interaction.reply({ content: '📩 Règlement envoyé dans ce salon.', ephemeral: true });
-      const embed = new EmbedBuilder()
-        .setTitle('📜 Règlement du Serveur')
-        .setColor(0x3498db)
-        .setDescription(`
-**🤝 Respect** : soyez bienveillant.
-**🗣️ Langage** : pas de spam, pub, propos haineux.
-**📌 Sujets sensibles** : pas de politique, religion, NSFW.
-**📢 Publicité** : interdite sans accord.
-**🛠️ Utilisation des salons** : respectez les thèmes.
-**👑 Staff** : respect des décisions.
-        `);
-      const bouton = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('accepte_reglement')
-          .setLabel('Valider le règlement')
-          .setStyle(ButtonStyle.Primary)
-      );
-      await interaction.channel.send({ embeds: [embed], components: [bouton] });
-    }
 });
 
-// 🎉 Message de bienvenue avec GIF en grand
-const gifsBienvenue = [
-  'https://media1.giphy.com/media/q8ld8Sk7WWyY0/giphy.gif',
-  'https://media1.giphy.com/media/9az09tlYyYNfq/giphy.gif',
-  'https://media1.giphy.com/media/PoK3zuKMTYqNUFFbaG/giphy.gif',
-  'https://media1.giphy.com/media/A8v23NdA9fGZW/giphy.gif',
-  'https://media1.giphy.com/media/13Uqp5IGFpmDle/giphy.gif'
-];
-
+// 👋 Message de bienvenue
 client.on('guildMemberAdd', async member => {
   const channel = member.guild.channels.cache.get(welcomeChannelId);
   if (!channel) return;
-
-  const gif = gifsBienvenue[Math.floor(Math.random() * gifsBienvenue.length)];
   const embed = new EmbedBuilder()
-    .setTitle(`🎉 Bienvenue ${member.user.username} !`)
+    .setTitle(`Bienvenue ${member.user.username} !`)
     .setColor(0x00AE86)
-    .setDescription("Nous sommes ravis de t'accueillir sur le serveur !")
-    .setFooter({ text: 'Amuse-toi bien et n’oublie pas de lire le règlement 💎' });
-
+    .setImage('https://media.giphy.com/media/DSxKEQoQix9hC/giphy.gif')
+    .setFooter({ text: 'Amuse-toi bien sur le serveur ! 🌟' });
   await channel.send({ content: `<@${member.id}>`, embeds: [embed] });
-  await channel.send(gif);
+});
+
+// 📦 Slash + bouton handler
+client.on(Events.InteractionCreate, async interaction => {
+  if (!interaction.isCommand() && !interaction.isButton()) return;
+
+  if (interaction.isCommand()) {
+    const { commandName } = interaction;
+
+    if (commandName === 'autorole') {
+      if (interaction.channel.id !== choixRoleChannelId) {
+        return interaction.reply({ content: '❌ Utilise cette commande dans le salon autorole.', ephemeral: true });
+      }
+      await interaction.reply({ content: '📩 Menu autorole envoyé dans ce salon.', ephemeral: true });
+      const embed = new EmbedBuilder()
+        .setTitle('🎯 Choisis tes jeux préférés !')
+        .setColor(0x3498db)
+        .setDescription(`
+Réagis avec un émoji pour recevoir un rôle :
+
+> 🔫 ・ **Valorant**
+> 💥 ・ **Fortnite**
+> 🚀 ・ **Rocket League**
+> 🎮 ・ **Autres jeux**
+> 🔞 ・ **Salon Trash**
+
+💡 N’hésite pas à proposer d’autres jeux dans le salon discussions si tu veux qu’on les ajoute.
+        `)
+        .setFooter({ text: 'Clique sur un émoji ci-dessous pour recevoir ou retirer un rôle.' });
+      const msg = await interaction.channel.send({ embeds: [embed] });
+      for (const emoji of Object.keys(roles)) await msg.react(emoji);
+    }
+
     if (commandName === 'reglement') {
       await interaction.reply({ content: '📩 Règlement envoyé dans ce salon.', ephemeral: true });
       const embed = new EmbedBuilder()
@@ -165,18 +139,75 @@ client.on('guildMemberAdd', async member => {
           .setCustomId('accepte_reglement')
           .setLabel('Valider le règlement')
           .setStyle(ButtonStyle.Primary)
+          .setEmoji('☑️')
       );
       await interaction.channel.send({ embeds: [embed], components: [bouton] });
     }
-});
 
-// 📦 Interaction Handler
-client.on(Events.InteractionCreate, async interaction => {
-  if (!interaction.isCommand() && !interaction.isButton()) return;
+    if (commandName === 'help') {
+      const embed = new EmbedBuilder()
+        .setTitle('📚 Commandes disponibles')
+        .setColor(0x00bfff)
+        .setDescription(`
+• /autorole : afficher les rôles disponibles
+• /reglement : afficher le règlement
+• /ban : bannir un membre (admin seulement)
+• /kick : expulser un membre (admin seulement)
+• /mute : rendre un membre muet (admin seulement)
+• /unban : débannir un membre (admin seulement)
+• /blague : une blague aléatoire pour rigoler 😄
+        `);
+      await interaction.reply({ embeds: [embed], ephemeral: true });
+    }
 
-  const { commandName } = interaction;
+    if (commandName === 'ban') {
+      if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers)) {
+        return interaction.reply({ content: '❌ Tu n’as pas la permission de bannir.', ephemeral: true });
+      }
+      const user = interaction.options.getUser('membre');
+      const member = interaction.guild.members.cache.get(user.id);
+      if (!member) return interaction.reply({ content: '❌ Membre introuvable.', ephemeral: true });
+      await member.ban();
+      await interaction.reply({ content: `🔨 <@${user.id}> a été banni.` });
+    }
 
-  if (interaction.isCommand()) {
+    if (commandName === 'kick') {
+      if (!interaction.member.permissions.has(PermissionsBitField.Flags.KickMembers)) {
+        return interaction.reply({ content: '❌ Tu n’as pas la permission d’expulser.', ephemeral: true });
+      }
+      const user = interaction.options.getUser('membre');
+      const member = interaction.guild.members.cache.get(user.id);
+      if (!member) return interaction.reply({ content: '❌ Membre introuvable.', ephemeral: true });
+      await member.kick();
+      await interaction.reply({ content: `🦶 <@${user.id}> a été expulsé.` });
+    }
+
+    if (commandName === 'mute') {
+      if (!interaction.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) {
+        return interaction.reply({ content: '❌ Tu n’as pas la permission de mute.', ephemeral: true });
+      }
+      const user = interaction.options.getUser('membre');
+      const member = interaction.guild.members.cache.get(user.id);
+      if (!member) return interaction.reply({ content: '❌ Membre introuvable.', ephemeral: true });
+      const timeoutDuration = 24 * 60 * 60 * 1000;
+      await member.timeout(timeoutDuration, 'Mute par commande modérateur');
+      await interaction.reply({ content: `🔇 <@${user.id}> a été rendu muet pendant 24h.` });
+    }
+
+    if (commandName === 'unban') {
+      if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers)) {
+        return interaction.reply({ content: '❌ Tu n’as pas la permission de débannir.', ephemeral: true });
+      }
+      const userId = interaction.options.getString('userid');
+      try {
+        await interaction.guild.members.unban(userId);
+        await interaction.reply({ content: `🔓 L'utilisateur avec l'ID \`${userId}\` a été débanni.` });
+      } catch (error) {
+        console.error('❌ Erreur unban :', error);
+        await interaction.reply({ content: `❌ Impossible de débannir l'utilisateur avec l'ID \`${userId}\`.` });
+      }
+    }
+
     if (commandName === 'blague') {
       const blagues = [
         "Pourquoi les canards ont-ils autant de plumes ? Pour couvrir leur derrière !",
@@ -211,7 +242,7 @@ client.on(Events.InteractionCreate, async interaction => {
         "Pourquoi les avions volent ? Parce qu’ils ont un plan.",
         "Pourquoi les boutons aiment les pulls ? Parce qu’ils s’y attachent.",
         "Pourquoi les musiciens voyagent beaucoup ? Parce qu’ils ont le sens du rythme.",
-        "Pourquoi les mouches volent ? Parce que marcher, c’est fatiguant.",
+        "Pourquoi les mouches volent ? Parce qu’aller marcher c’est fatigant.",
         "Pourquoi les hiboux ne font jamais de bruit ? Parce qu’ils préfèrent les chuchotements.",
         "Pourquoi les pommes tombent toujours ? Parce qu’elles en ont marre d’être en haut.",
         "Pourquoi les chats ne révisent jamais ? Parce qu’ils ont neuf vies.",
@@ -231,143 +262,6 @@ client.on(Events.InteractionCreate, async interaction => {
       const blague = blagues[Math.floor(Math.random() * blagues.length)];
       await interaction.reply({ content: `😂 ${blague}`, ephemeral: false });
     }
-
-    if (commandName === 'help') {
-      const embed = new EmbedBuilder()
-        .setTitle('📚 Commandes disponibles')
-        .setColor(0x00bfff)
-        .setDescription(`
-• /autorole : afficher les rôles disponibles
-• /reglement : afficher le règlement
-• /ban : bannir un membre (admin seulement)
-• /kick : expulser un membre (admin seulement)
-• /mute : rendre un membre muet (admin seulement)
-• /unban : débannir un membre (admin seulement)
-• /blague : une blague aléatoire pour rigoler 😄
-        `);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
-    }
-
-    // suite dans le prochain bloc
-  }
-    if (commandName === 'reglement') {
-      await interaction.reply({ content: '📩 Règlement envoyé dans ce salon.', ephemeral: true });
-      const embed = new EmbedBuilder()
-        .setTitle('📜 Règlement du Serveur')
-        .setColor(0x3498db)
-        .setDescription(`
-**🤝 Respect** : soyez bienveillant.
-**🗣️ Langage** : pas de spam, pub, propos haineux.
-**📌 Sujets sensibles** : pas de politique, religion, NSFW.
-**📢 Publicité** : interdite sans accord.
-**🛠️ Utilisation des salons** : respectez les thèmes.
-**👑 Staff** : respect des décisions.
-        `);
-      const bouton = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('accepte_reglement')
-          .setLabel('Valider le règlement')
-          .setStyle(ButtonStyle.Primary)
-      );
-      await interaction.channel.send({ embeds: [embed], components: [bouton] });
-    }
-});
-      await interaction.reply({ content: '📩 Règlement envoyé dans ce salon.', ephemeral: true });
-
-      const embed = new EmbedBuilder()
-        .setTitle('📜 Règlement du Serveur')
-        .setColor(0x3498db)
-        .setDescription(`
-**🤝 Respect** : soyez bienveillant.
-**🗣️ Langage** : pas de spam, pub, propos haineux.
-**📌 Sujets sensibles** : pas de politique, religion, NSFW.
-**📢 Publicité** : interdite sans accord.
-**🛠️ Utilisation des salons** : respectez les thèmes.
-**👑 Staff** : respect des décisions.
-        `);
-
-      const bouton = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('accepte_reglement')
-          .setLabel('Valider le règlement')
-          .setStyle(ButtonStyle.Primary)
-          .setEmoji('☑️')
-      );
-
-      await interaction.channel.send({ embeds: [embed], components: [bouton] });
-    }
-
-    if (commandName === 'autorole') {
-      if (interaction.channel.id !== choixRoleChannelId) {
-        return interaction.reply({ content: '❌ Utilise cette commande dans le salon autorole.', ephemeral: true });
-      }
-
-      await interaction.reply({ content: '📩 Menu autorole envoyé dans ce salon.', ephemeral: true });
-
-      const embed = new EmbedBuilder()
-        .setTitle('🎯 Choisis tes jeux préférés !')
-        .setColor(0x3498db)
-        .setDescription(`
-Réagis avec un émoji pour recevoir un rôle :
-
-> 🔫 ・ Valorant
-> 💥 ・ Fortnite
-> 🚀 ・ Rocket League
-> 🎮 ・ Autres jeux
-> 🔞 ・ Salon Trash
-
-💡 Propose d’autres jeux dans #discussions si besoin.
-        `);
-
-      const msg = await interaction.channel.send({ embeds: [embed] });
-      for (const emoji of Object.keys(roles)) await msg.react(emoji);
-    }
-
-    if (commandName === 'ban') {
-      if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers)) {
-        return interaction.reply({ content: '❌ Permission refusée.', ephemeral: true });
-      }
-      const user = interaction.options.getUser('membre');
-      const member = interaction.guild.members.cache.get(user.id);
-      if (!member) return interaction.reply({ content: '❌ Membre introuvable.', ephemeral: true });
-      await member.ban();
-      await interaction.reply({ content: `🔨 <@${user.id}> a été banni.` });
-    }
-
-    if (commandName === 'kick') {
-      if (!interaction.member.permissions.has(PermissionsBitField.Flags.KickMembers)) {
-        return interaction.reply({ content: '❌ Permission refusée.', ephemeral: true });
-      }
-      const user = interaction.options.getUser('membre');
-      const member = interaction.guild.members.cache.get(user.id);
-      if (!member) return interaction.reply({ content: '❌ Membre introuvable.', ephemeral: true });
-      await member.kick();
-      await interaction.reply({ content: `🦶 <@${user.id}> a été expulsé.` });
-    }
-
-    if (commandName === 'mute') {
-      if (!interaction.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) {
-        return interaction.reply({ content: '❌ Permission refusée.', ephemeral: true });
-      }
-      const user = interaction.options.getUser('membre');
-      const member = interaction.guild.members.cache.get(user.id);
-      if (!member) return interaction.reply({ content: '❌ Membre introuvable.', ephemeral: true });
-      await member.timeout(24 * 60 * 60 * 1000, 'Mute 24h');
-      await interaction.reply({ content: `🔇 <@${user.id}> a été mute 24h.` });
-    }
-
-    if (commandName === 'unban') {
-      if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers)) {
-        return interaction.reply({ content: '❌ Permission refusée.', ephemeral: true });
-      }
-      const userId = interaction.options.getString('userid');
-      try {
-        await interaction.guild.members.unban(userId);
-        await interaction.reply({ content: `🔓 L'utilisateur \`${userId}\` a été débanni.` });
-      } catch {
-        await interaction.reply({ content: `❌ Impossible de débannir \`${userId}\`.`, ephemeral: true });
-      }
-    }
   }
 
   if (interaction.isButton() && interaction.customId === 'accepte_reglement') {
@@ -375,27 +269,6 @@ Réagis avec un émoji pour recevoir un rôle :
     await member.roles.add(membreRoleId);
     await interaction.reply({ content: '✅ Règlement accepté. Rôle attribué.', ephemeral: true });
   }
-    if (commandName === 'reglement') {
-      await interaction.reply({ content: '📩 Règlement envoyé dans ce salon.', ephemeral: true });
-      const embed = new EmbedBuilder()
-        .setTitle('📜 Règlement du Serveur')
-        .setColor(0x3498db)
-        .setDescription(`
-**🤝 Respect** : soyez bienveillant.
-**🗣️ Langage** : pas de spam, pub, propos haineux.
-**📌 Sujets sensibles** : pas de politique, religion, NSFW.
-**📢 Publicité** : interdite sans accord.
-**🛠️ Utilisation des salons** : respectez les thèmes.
-**👑 Staff** : respect des décisions.
-        `);
-      const bouton = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('accepte_reglement')
-          .setLabel('Valider le règlement')
-          .setStyle(ButtonStyle.Primary)
-      );
-      await interaction.channel.send({ embeds: [embed], components: [bouton] });
-    }
 });
 
 // 🎭 Gestion des rôles par réactions
@@ -418,76 +291,37 @@ async function handleReaction(reaction, user, add = true) {
 client.on('messageReactionAdd', (reaction, user) => handleReaction(reaction, user, true));
 client.on('messageReactionRemove', (reaction, user) => handleReaction(reaction, user, false));
 
-// 📑 LOGS (exemples : ban, modif, suppression...)
-client.on('guildBanAdd', async (guild, user) => {
-  const logChannel = guild.channels.cache.get(logChannelId);
-  if (!logChannel) return;
-  const embed = new EmbedBuilder()
-    .setTitle('🔨 Membre banni')
-    .setColor(0xff0000)
-    .addFields(
-      { name: 'Utilisateur', value: `${user.tag} (\`${user.id}\`)` },
-      { name: 'Date', value: `<t:${Math.floor(Date.now() / 1000)}:F>` }
-    );
-  logChannel.send({ embeds: [embed] });
-    if (commandName === 'reglement') {
-      await interaction.reply({ content: '📩 Règlement envoyé dans ce salon.', ephemeral: true });
-      const embed = new EmbedBuilder()
-        .setTitle('📜 Règlement du Serveur')
-        .setColor(0x3498db)
-        .setDescription(`
-**🤝 Respect** : soyez bienveillant.
-**🗣️ Langage** : pas de spam, pub, propos haineux.
-**📌 Sujets sensibles** : pas de politique, religion, NSFW.
-**📢 Publicité** : interdite sans accord.
-**🛠️ Utilisation des salons** : respectez les thèmes.
-**👑 Staff** : respect des décisions.
-        `);
-      const bouton = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('accepte_reglement')
-          .setLabel('Valider le règlement')
-          .setStyle(ButtonStyle.Primary)
-      );
-      await interaction.channel.send({ embeds: [embed], components: [bouton] });
-    }
+// 📜 Logs type Carl-bot
+client.on('guildBanAdd', async (ban) => {
+  const channel = ban.guild.channels.cache.get(logChannelId);
+  if (channel) channel.send(`🔨 **Ban** : ${ban.user.tag} (\`${ban.user.id}\`) a été banni.`);
 });
-
+client.on('guildBanRemove', async (ban) => {
+  const channel = ban.guild.channels.cache.get(logChannelId);
+  if (channel) channel.send(`♻️ **Unban** : ${ban.user.tag} (\`${ban.user.id}\`) a été débanni.`);
+});
 client.on('messageDelete', async message => {
-  const logChannel = message.guild?.channels.cache.get(logChannelId);
-  if (!logChannel || !message.content || message.author?.bot) return;
-  const embed = new EmbedBuilder()
-    .setTitle('🗑️ Message supprimé')
-    .setColor(0x808080)
-    .addFields(
-      { name: 'Auteur', value: `${message.author.tag} (\`${message.author.id}\`)` },
-      { name: 'Contenu', value: message.content.slice(0, 1000) },
-      { name: 'Salon', value: `<#${message.channel.id}>` },
-      { name: 'Date', value: `<t:${Math.floor(Date.now() / 1000)}:F>` }
-    );
-  logChannel.send({ embeds: [embed] });
-    if (commandName === 'reglement') {
-      await interaction.reply({ content: '📩 Règlement envoyé dans ce salon.', ephemeral: true });
-      const embed = new EmbedBuilder()
-        .setTitle('📜 Règlement du Serveur')
-        .setColor(0x3498db)
-        .setDescription(`
-**🤝 Respect** : soyez bienveillant.
-**🗣️ Langage** : pas de spam, pub, propos haineux.
-**📌 Sujets sensibles** : pas de politique, religion, NSFW.
-**📢 Publicité** : interdite sans accord.
-**🛠️ Utilisation des salons** : respectez les thèmes.
-**👑 Staff** : respect des décisions.
-        `);
-      const bouton = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('accepte_reglement')
-          .setLabel('Valider le règlement')
-          .setStyle(ButtonStyle.Primary)
-      );
-      await interaction.channel.send({ embeds: [embed], components: [bouton] });
-    }
+  const channel = message.guild?.channels.cache.get(logChannelId);
+  if (channel && !message.partial && !message.author?.bot) {
+    channel.send(`🗑️ **Message supprimé** par <@${message.author.id}> dans <#${message.channel.id}> :\n\`${message.content || 'Contenu indisponible'}\``);
+  }
+});
+client.on('messageUpdate', async (oldMsg, newMsg) => {
+  const channel = oldMsg.guild?.channels.cache.get(logChannelId);
+  if (!channel || oldMsg.partial || newMsg.partial || oldMsg.author?.bot || oldMsg.content === newMsg.content) return;
+  channel.send(`✏️ **Message édité** par <@${oldMsg.author.id}> dans <#${oldMsg.channel.id}> :\n**Avant** : \`${oldMsg.content}\`\n**Après** : \`${newMsg.content}\``);
+});
+client.on('guildMemberUpdate', async (oldMember, newMember) => {
+  const channel = newMember.guild.channels.cache.get(logChannelId);
+  if (!channel) return;
+  if (oldMember.nickname !== newMember.nickname) {
+    channel.send(`🪪 **Pseudo modifié** : <@${newMember.id}> — \`${oldMember.nickname || oldMember.user.username}\` ➜ \`${newMember.nickname || newMember.user.username}\``);
+  }
+  const added = newMember.roles.cache.filter(r => !oldMember.roles.cache.has(r.id));
+  for (const role of added.values()) channel.send(`➕ **Rôle ajouté** à <@${newMember.id}> : ${role.name}`);
+  const removed = oldMember.roles.cache.filter(r => !newMember.roles.cache.has(r.id));
+  for (const role of removed.values()) channel.send(`➖ **Rôle retiré** à <@${newMember.id}> : ${role.name}`);
 });
 
-// 🔐 Lancement du bot
+// 🔐 Connexion
 client.login(process.env.TOKEN);
