@@ -63,7 +63,9 @@ client.once('ready', async () => {
     new SlashCommandBuilder().setName('kick').setDescription('Expulser un membre').addUserOption(option =>
       option.setName('membre').setDescription('Membre à expulser').setRequired(true)),
     new SlashCommandBuilder().setName('mute').setDescription('Rendre un membre muet').addUserOption(option =>
-      option.setName('membre').setDescription('Membre à rendre muet').setRequired(true))
+      option.setName('membre').setDescription('Membre à rendre muet').setRequired(true)),
+    new SlashCommandBuilder().setName('unban').setDescription('Débannir un membre').addStringOption(option =>
+      option.setName('userid').setDescription("ID du membre à débannir").setRequired(true))
   ].map(cmd => cmd.toJSON());
 
   const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
@@ -118,6 +120,8 @@ Réagis avec un émoji pour recevoir un rôle :
 > 🚀 ・ **Rocket League**
 > 🎮 ・ **Autres jeux**
 > 🔞 ・ **Salon Trash**
+
+💡 N’hésite pas à proposer d’autres jeux dans le salon discussions si tu veux qu’on les ajoute.
         `)
         .setFooter({ text: 'Clique sur un émoji ci-dessous pour recevoir ou retirer un rôle.' });
 
@@ -161,6 +165,7 @@ Réagis avec un émoji pour recevoir un rôle :
 • /ban : bannir un membre (admin seulement)
 • /kick : expulser un membre (admin seulement)
 • /mute : rendre un membre muet (admin seulement)
+• /unban : débannir un membre (admin seulement)
         `);
       await interaction.reply({ embeds: [embed], ephemeral: true });
     }
@@ -200,6 +205,22 @@ Réagis avec un émoji pour recevoir un rôle :
       const timeoutDuration = 24 * 60 * 60 * 1000;
       await member.timeout(timeoutDuration, 'Mute par commande modérateur');
       await interaction.reply({ content: `🔇 <@${user.id}> a été rendu muet pendant 24h.` });
+    }
+
+    if (commandName === 'unban') {
+      if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers)) {
+        return interaction.reply({ content: '❌ Tu n’as pas la permission de débannir.', ephemeral: true });
+      }
+
+      const userId = interaction.options.getString('userid');
+
+      try {
+        await interaction.guild.members.unban(userId);
+        await interaction.reply({ content: `🔓 L'utilisateur avec l'ID \`${userId}\` a été débanni.` });
+      } catch (error) {
+        console.error("❌ Erreur unban :", error);
+        await interaction.reply({ content: `❌ Impossible de débannir l'utilisateur avec l'ID \`${userId}\`.` });
+      }
     }
   }
 
