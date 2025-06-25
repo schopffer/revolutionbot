@@ -80,6 +80,7 @@ client.once('ready', async () => {
     console.error('❌ Erreur enregistrement slash commands :', err);
   }
 });
+
 // Suppression des anciens listeners pour éviter les doublons
 client.removeAllListeners('guildMemberAdd');
 
@@ -91,17 +92,6 @@ client.on('guildMemberAdd', async (member) => {
     'https://media1.giphy.com/media/A8v23NdA9fGZW/giphy.gif',
     'https://media1.giphy.com/media/13Uqp5IGFpmDle/giphy.gif'
   ];
-  const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
-  const channel = member.guild.channels.cache.get(welcomeChannelId);
-  if (!channel) return;
-  const embed = new EmbedBuilder()
-    .setTitle(`Bienvenue ${member.user.username} !`)
-    .setColor(0x00AE86)
-    .setImage(randomGif)
-    .setFooter({ text: 'Amuse-toi bien sur le serveur ! 🌟' });
-  await channel.send({ content: `<@${member.id}>`, embeds: [embed] });
-});
-
   const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
   const channel = member.guild.channels.cache.get(welcomeChannelId);
   if (!channel) return;
