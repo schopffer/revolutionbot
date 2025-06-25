@@ -31,7 +31,7 @@ const client = new Client({
     GatewayIntentBits.GuildMessageReactions,
     GatewayIntentBits.GuildPresences
   ],
-  partials: [Partials.Message, Partials.Channel, Partials.Reaction]
+  partials: [Partials.Message, Partials.Channel, Partials.Reaction],
     if (commandName === 'reglement') {
       await interaction.reply({ content: '📩 Règlement envoyé dans ce salon.', ephemeral: true });
       const embed = new EmbedBuilder()
