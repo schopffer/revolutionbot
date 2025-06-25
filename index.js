@@ -82,7 +82,7 @@ client.once('ready', async () => {
   }
 });
 
-// 👋 Message de bienvenue avec GIF One Piece (grand format)
+// 👋 Message de bienvenue avec GIF One Piece
 const gifsBienvenue = [
   'https://media.giphy.com/media/q8ld8Sk7WWyY0/giphy.gif',
   'https://media.giphy.com/media/9az09tlYyYNfq/giphy.gif',
@@ -108,10 +108,7 @@ client.on('guildMemberAdd', async member => {
   });
 });
 
-  await channel.send({ content: `<@${member.id}>`, embeds: [embed] });
-});
-
-// 📦 Interaction Handler (slash + boutons)
+// 📦 Interaction Handler
 client.on(Events.InteractionCreate, async interaction => {
   if (!interaction.isCommand() && !interaction.isButton()) return;
 
