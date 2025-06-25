@@ -36,12 +36,12 @@ const client = new Client({
   partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
 
-// 🔢 IDs personnalisés
-const GUILD_ID = '1385409088263028939';
-const welcomeChannelId = '1385999517983440967';
-const reglementChannelId = '1385409088824938652';
+// 🔢 IDs personnalisés (mets les tiens ici ou via .env)
+const GUILD_ID = process.env.GUILD_ID;
+const CLIENT_ID = process.env.CLIENT_ID;
+const welcomeChannelId = '1385999517983440967'; // à adapter
 const choixRoleChannelId = '1385943465321566289';
-const membreRoleId = '1385627871023861820'; // Rôle membre pour accès blague + attribution règlement
+const membreRoleId = '1385627871023861820';
 const logChannelId = '1385651948094623865';
 
 // 🎮 Rôles par emoji
@@ -53,36 +53,36 @@ const roles = {
   '🔞': '1386695919675769005'
 };
 
-// ✅ Slash commands registration
-client.once('ready', async () => {
-  console.log(`✅ Connecté en tant que ${client.user.tag}`);
+// 📋 Déclaration des commandes
+const commands = [
+  new SlashCommandBuilder().setName('autorole').setDescription('Afficher les rôles disponibles'),
+  new SlashCommandBuilder().setName('reglement').setDescription('Afficher le règlement du serveur'),
+  new SlashCommandBuilder().setName('help').setDescription('Afficher la liste des commandes disponibles'),
+  new SlashCommandBuilder().setName('ban').setDescription('Bannir un membre').addUserOption(option =>
+    option.setName('membre').setDescription('Membre à bannir').setRequired(true)),
+  new SlashCommandBuilder().setName('kick').setDescription('Expulser un membre').addUserOption(option =>
+    option.setName('membre').setDescription('Membre à expulser').setRequired(true)),
+  new SlashCommandBuilder().setName('mute').setDescription('Rendre un membre muet').addUserOption(option =>
+    option.setName('membre').setDescription('Membre à rendre muet').setRequired(true)),
+  new SlashCommandBuilder().setName('unban').setDescription('Débannir un membre').addStringOption(option =>
+    option.setName('userid').setDescription("ID du membre à débannir").setRequired(true)),
+  new SlashCommandBuilder().setName('blague').setDescription('Raconte une blague pour rigoler 😄')
+].map(cmd => cmd.toJSON());
 
-  const commands = [
-    new SlashCommandBuilder().setName('autorole').setDescription('Afficher les rôles disponibles'),
-    new SlashCommandBuilder().setName('reglement').setDescription('Afficher le règlement du serveur'),
-    new SlashCommandBuilder().setName('help').setDescription('Afficher la liste des commandes disponibles'),
-    new SlashCommandBuilder().setName('ban').setDescription('Bannir un membre').addUserOption(option =>
-      option.setName('membre').setDescription('Membre à bannir').setRequired(true)),
-    new SlashCommandBuilder().setName('kick').setDescription('Expulser un membre').addUserOption(option =>
-      option.setName('membre').setDescription('Membre à expulser').setRequired(true)),
-    new SlashCommandBuilder().setName('mute').setDescription('Rendre un membre muet').addUserOption(option =>
-      option.setName('membre').setDescription('Membre à rendre muet').setRequired(true)),
-    new SlashCommandBuilder().setName('unban').setDescription('Débannir un membre').addStringOption(option =>
-      option.setName('userid').setDescription("ID du membre à débannir").setRequired(true)),
-    new SlashCommandBuilder().setName('blague').setDescription('Raconte une blague pour rigoler 😄')
-  ].map(cmd => cmd.toJSON());
-
+// 🔄 Fonction de déploiement des commandes
+async function deployCommands() {
   const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
   try {
-    await rest.put(Routes.applicationGuildCommands(client.user.id, GUILD_ID), { body: commands });
-    console.log('✅ Slash commands enregistrées');
-  } catch (err) {
-    console.error('❌ Erreur enregistrement slash commands :', err);
+    console.log('Déploiement des commandes...');
+    await rest.put(
+      Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
+      { body: commands }
+    );
+    console.log('Commandes déployées !');
+  } catch (error) {
+    console.error('Erreur déploiement commandes :', error);
   }
-});
-
-// Suppression des anciens listeners pour éviter les doublons
-client.removeAllListeners('guildMemberAdd');
+}
 
 // 👋 Message de bienvenue avec gif aléatoire
 client.on('guildMemberAdd', async (member) => {
@@ -203,8 +203,7 @@ Réagis avec un émoji pour recevoir un rôle :
       const user = interaction.options.getUser('membre');
       const member = interaction.guild.members.cache.get(user.id);
       if (!member) return interaction.reply({ content: '❌ Membre introuvable.', ephemeral: true });
-      const timeoutDuration = 24 * 60 * 60 * 1000;
-      await member.timeout(timeoutDuration, 'Mute par commande modérateur');
+      await member.timeout(24 * 60 * 60 * 1000, 'Mute par commande modérateur');
       await interaction.reply({ content: `🔇 <@${user.id}> a été rendu muet pendant 24h.` });
     }
 
@@ -223,11 +222,9 @@ Réagis avec un émoji pour recevoir un rôle :
     }
 
     if (commandName === 'blague') {
-      // Vérifie que l’utilisateur a le rôle membre
       if (!interaction.member.roles.cache.has(membreRoleId)) {
         return interaction.reply({ content: '❌ Tu dois avoir le rôle membre pour utiliser cette commande.', ephemeral: true });
       }
-
       const blagues = [
         "Pourquoi les canards ont-ils autant de plumes ? Pour couvrir leur derrière !",
         "Quel est le comble pour un électricien ? De ne pas être au courant.",
