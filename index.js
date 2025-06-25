@@ -1,8 +1,11 @@
 // 🌐 Express pour hébergement Render
 const express = require('express');
 const app = express();
+
 app.get('/', (req, res) => res.send('Bot en ligne !'));
-app.listen(3000, () => console.log('🟢 Serveur web actif'));
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🟢 Serveur web actif sur le port ${PORT}`));
 
 // 📆 Modules Discord.js
 require('dotenv').config();
