@@ -78,7 +78,7 @@ client.once('ready', async () => {
   }
 });
 
-// 👋 Message de bienvenue
+// 👋 Message de bienvenue avec gif aléatoire
 client.on('guildMemberAdd', async member => {
   const gifs = [
     'https://media.giphy.com/media/DSxKEQoQix9hC/giphy.gif',
@@ -298,36 +298,112 @@ async function handleReaction(reaction, user, add = true) {
 client.on('messageReactionAdd', (reaction, user) => handleReaction(reaction, user, true));
 client.on('messageReactionRemove', (reaction, user) => handleReaction(reaction, user, false));
 
-// 📜 Logs type Carl-bot
+// 📜 Logs type Carl-bot améliorés en embeds
 client.on('guildBanAdd', async (ban) => {
   const channel = ban.guild.channels.cache.get(logChannelId);
-  if (channel) channel.send(`🔨 **Ban** : ${ban.user.tag} (\`${ban.user.id}\`) a été banni.`);
+  if (!channel) return;
+  const embed = new EmbedBuilder()
+    .setAuthor({ name: ban.user.tag, iconURL: ban.user.displayAvatarURL() })
+    .setTitle('🔨 Membre banni')
+    .setDescription(`L'utilisateur ${ban.user} a été banni.`)
+    .addFields({ name: 'ID', value: `\`${ban.user.id}\`` })
+    .setTimestamp()
+    .setColor('Red');
+  await channel.send({ embeds: [embed] });
 });
+
 client.on('guildBanRemove', async (ban) => {
   const channel = ban.guild.channels.cache.get(logChannelId);
-  if (channel) channel.send(`♻️ **Unban** : ${ban.user.tag} (\`${ban.user.id}\`) a été débanni.`);
+  if (!channel) return;
+  const embed = new EmbedBuilder()
+    .setAuthor({ name: ban.user.tag, iconURL: ban.user.displayAvatarURL() })
+    .setTitle('♻️ Membre débanni')
+    .setDescription(`L'utilisateur ${ban.user} a été débanni.`)
+    .addFields({ name: 'ID', value: `\`${ban.user.id}\`` })
+    .setTimestamp()
+    .setColor('Green');
+  await channel.send({ embeds: [embed] });
 });
+
 client.on('messageDelete', async message => {
   const channel = message.guild?.channels.cache.get(logChannelId);
-  if (channel && !message.partial && !message.author?.bot) {
-    channel.send(`🗑️ **Message supprimé** par <@${message.author.id}> dans <#${message.channel.id}> :\n\`${message.content || 'Contenu indisponible'}\``);
-  }
+  if (!channel || !message.content || message.author?.bot) return;
+  const embed = new EmbedBuilder()
+    .setAuthor({ name: message.author.tag, iconURL: message.author.displayAvatarURL() })
+    .setTitle('🗑️ Message supprimé')
+    .setDescription(message.content.length > 1024 ? message.content.slice(0, 1021) + '...' : message.content)
+    .addFields(
+      { name: 'Auteur', value: `<@${message.author.id}> (\`${message.author.id}\`)`, inline: true },
+      { name: 'Salon', value: `<#${message.channel.id}>`, inline: true },
+      { name: 'Message ID', value: `\`${message.id}\``, inline: true }
+    )
+    .setTimestamp()
+    .setColor('DarkRed');
+  await channel.send({ embeds: [embed] });
 });
+
 client.on('messageUpdate', async (oldMsg, newMsg) => {
   const channel = oldMsg.guild?.channels.cache.get(logChannelId);
   if (!channel || oldMsg.partial || newMsg.partial || oldMsg.author?.bot || oldMsg.content === newMsg.content) return;
-  channel.send(`✏️ **Message édité** par <@${oldMsg.author.id}> dans <#${oldMsg.channel.id}> :\n**Avant** : \`${oldMsg.content}\`\n**Après** : \`${newMsg.content}\``);
+  const embed = new EmbedBuilder()
+    .setAuthor({ name: oldMsg.author.tag, iconURL: oldMsg.author.displayAvatarURL() })
+    .setTitle('✏️ Message édité')
+    .addFields(
+      { name: 'Auteur', value: `<@${oldMsg.author.id}> (\`${oldMsg.author.id}\`)` },
+      { name: 'Salon', value: `<#${oldMsg.channel.id}>` },
+      { name: 'Avant', value: oldMsg.content.length > 1024 ? oldMsg.content.slice(0, 1021) + '...' : oldMsg.content },
+      { name: 'Après', value: newMsg.content.length > 1024 ? newMsg.content.slice(0, 1021) + '...' : newMsg.content }
+    )
+    .setTimestamp()
+    .setColor('Orange');
+  await channel.send({ embeds: [embed] });
 });
+
 client.on('guildMemberUpdate', async (oldMember, newMember) => {
   const channel = newMember.guild.channels.cache.get(logChannelId);
   if (!channel) return;
+
   if (oldMember.nickname !== newMember.nickname) {
-    channel.send(`🪪 **Pseudo modifié** : <@${newMember.id}> — \`${oldMember.nickname || oldMember.user.username}\` ➜ \`${newMember.nickname || newMember.user.username}\``);
+    const embed = new EmbedBuilder()
+      .setAuthor({ name: newMember.user.tag, iconURL: newMember.user.displayAvatarURL() })
+      .setTitle('🪪 Pseudo modifié')
+      .setDescription(`<@${newMember.id}> a changé de pseudo`)
+      .addFields(
+        { name: 'Ancien pseudo', value: oldMember.nickname || oldMember.user.username, inline: true },
+        { name: 'Nouveau pseudo', value: newMember.nickname || newMember.user.username, inline: true }
+      )
+      .setTimestamp()
+      .setColor('Orange');
+    await channel.send({ embeds: [embed] });
   }
-  const added = newMember.roles.cache.filter(r => !oldMember.roles.cache.has(r.id));
-  for (const role of added.values()) channel.send(`➕ **Rôle ajouté** à <@${newMember.id}> : ${role.name}`);
-  const removed = oldMember.roles.cache.filter(r => !newMember.roles.cache.has(r.id));
-  for (const role of removed.values()) channel.send(`➖ **Rôle retiré** à <@${newMember.id}> : ${role.name}`);
+
+  const addedRoles = newMember.roles.cache.filter(role => !oldMember.roles.cache.has(role.id));
+  if (addedRoles.size > 0) {
+    const embed = new EmbedBuilder()
+      .setAuthor({ name: newMember.user.tag, iconURL: newMember.user.displayAvatarURL() })
+      .setTitle('➕ Rôles ajoutés')
+      .setDescription(`<@${newMember.id}> a reçu les rôles suivants :`)
+      .addFields(
+        { name: 'Rôles', value: addedRoles.map(r => r.name).join(', ') }
+      )
+      .setTimestamp()
+      .setColor('Green');
+    await channel.send({ embeds: [embed] });
+  }
+
+  const removedRoles = oldMember.roles.cache.filter(role => !newMember.roles.cache.has(role.id));
+  if (removedRoles.size > 0) {
+    const embed = new EmbedBuilder()
+      .setAuthor({ name: newMember.user.tag, iconURL: newMember.user.displayAvatarURL() })
+      .setTitle('➖ Rôles retirés')
+      .setDescription(`<@${newMember.id}> a perdu les rôles suivants :`)
+      .addFields(
+        { name: 'Rôles', value: removedRoles.map(r => r.name).join(', ') }
+      )
+      .setTimestamp()
+      .setColor('Red');
+    await channel.send({ embeds: [embed] });
+  }
 });
 
 // 🔐 Connexion
